@@ -74,11 +74,11 @@ mqtt:
   
   # Birth and Will messages (like Arduino version)
   birth_message:
-    topic: ${mqtt_topic_prefix}/status
+    topic: ${mqtt_topic_prefix}/
     payload: "online"
     retain: true
   will_message:
-    topic: ${mqtt_topic_prefix}/status  
+    topic: ${mqtt_topic_prefix}/  
     payload: "offline"
     retain: true
   
@@ -872,7 +872,7 @@ web_server:
     password: !secret web_password
 
 # Optional: Status LED indication
-status_led:
-  pin:
-    number: LED_BUILTIN
-    inverted: true
+#status_led:
+#  pin:
+#    number: D4
+#    inverted: true
