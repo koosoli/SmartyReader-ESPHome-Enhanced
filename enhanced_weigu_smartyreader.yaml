@@ -133,11 +133,11 @@ dsmr:
   decryption_key: !secret weigu_dsmr_key
   max_telegram_length: 1800
 
-# Status LED
-status_led:
-  pin:
-    number: LED_BUILTIN
-    inverted: true
+# Optional: Status LED indication
+#status_led:
+#  pin:
+#    number: D4
+#    inverted: true
 
 # Enhanced sensor configuration
 sensor:
