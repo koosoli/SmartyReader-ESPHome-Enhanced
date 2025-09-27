@@ -1,6 +1,6 @@
 # Enhanced SmartyReader ESPHome Configurations
 
-This directory contains enhanced ESPHome configurations that bring advanced features from the original Arduino-based SmartyReader project to ESPHome, making them compatible with Home Assistant while adding powerful new capabilities.
+This directory contains enhanced ESPHome configurations that bring advanced features from the original Arduino-based SmartyReader project from Guy Weiler (www.weigu.lu) to ESPHome, making them compatible with Home Assistant while adding powerful new capabilities.
 
 ## 📁 Configuration Files
 
