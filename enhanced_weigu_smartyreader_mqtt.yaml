@@ -57,11 +57,11 @@ time:
     servers:
       - "lu.pool.ntp.org"
 
-# I2C for BME280
-i2c:
-  sda: D2
-  scl: D1
-  scan: true
+# I2C for BME280 sensor (optional - uncomment if you have one)
+# i2c:
+#   sda: D2
+#   scl: D1
+#   scan: true
 
 # MQTT Configuration (in addition to Home Assistant API)
 mqtt:
@@ -368,38 +368,38 @@ sensor:
     name: "Wi-Fi Signal"
     update_interval: 60s
     
-  # BME280 Environmental sensor
-  - platform: bme280_i2c
-    temperature:
-      name: "BME280 Temperature"
-      id: bme280_temp
-      oversampling: 16x
-      device_class: temperature
-      on_value:
-        then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/bme280_temperature_C
-              payload: !lambda 'return to_string(x);'
-    pressure:
-      name: "BME280 Pressure"
-      id: bme280_pressure
-      device_class: atmospheric_pressure
-      on_value:
-        then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/bme280_pressure_hPa
-              payload: !lambda 'return to_string(x);'
-    humidity:
-      name: "BME280 Humidity"
-      id: bme280_humidity
-      device_class: humidity
-      on_value:
-        then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/bme280_humidity_%
-              payload: !lambda 'return to_string(x);'
-    address: 0x76
-    update_interval: 60s
+  # Optional BME280 Environmental sensor (uncomment if you have one)
+  # - platform: bme280_i2c
+  #   temperature:
+  #     name: "BME280 Temperature"
+  #     id: bme280_temp
+  #     oversampling: 16x
+  #     device_class: temperature
+  #     on_value:
+  #       then:
+  #         - mqtt.publish:
+  #             topic: ${mqtt_topic_prefix}/bme280_temperature_C
+  #             payload: !lambda 'return to_string(x);'
+  #   pressure:
+  #     name: "BME280 Pressure"
+  #     id: bme280_pressure
+  #     device_class: atmospheric_pressure
+  #     on_value:
+  #       then:
+  #         - mqtt.publish:
+  #             topic: ${mqtt_topic_prefix}/bme280_pressure_hPa
+  #             payload: !lambda 'return to_string(x);'
+  #   humidity:
+  #     name: "BME280 Humidity"
+  #     id: bme280_humidity
+  #     device_class: humidity
+  #     on_value:
+  #       then:
+  #         - mqtt.publish:
+  #             topic: ${mqtt_topic_prefix}/bme280_humidity_%
+  #             payload: !lambda 'return to_string(x);'
+  #   address: 0x76
+  #   update_interval: 60s
 
   # Enhanced calculated sensors
   - platform: template
@@ -769,15 +769,16 @@ interval:
           auto time = id(sntp_time).now();
           json_payload += "\"ntp_datetime\":\"" + time.strftime("%Y-%m-%d %H:%M:%S") + "\",";
           
-          if (id(bme280_temp).has_state()) {
-            json_payload += "\"bme280_temperature_C\":" + to_string(id(bme280_temp).state) + ",";
-          }
-          if (id(bme280_humidity).has_state()) {
-            json_payload += "\"bme280_humidity_%\":" + to_string(id(bme280_humidity).state) + ",";
-          }
-          if (id(bme280_pressure).has_state()) {
-            json_payload += "\"bme280_pressure_hPa\":" + to_string(id(bme280_pressure).state) + ",";
-          }
+          // BME280 sensor data (uncomment if you have BME280 sensor)
+          // if (id(bme280_temp).has_state()) {
+          //   json_payload += "\"bme280_temperature_C\":" + to_string(id(bme280_temp).state) + ",";
+          // }
+          // if (id(bme280_humidity).has_state()) {
+          //   json_payload += "\"bme280_humidity_%\":" + to_string(id(bme280_humidity).state) + ",";
+          // }
+          // if (id(bme280_pressure).has_state()) {
+          //   json_payload += "\"bme280_pressure_hPa\":" + to_string(id(bme280_pressure).state) + ",";
+          // }
           if (id(energy_consumed_today).has_state()) {
             json_payload += "\"energy_consumption_calc_cumul_day_Wh\":" + to_string(id(energy_consumed_today).state * 1000) + ",";
           }
