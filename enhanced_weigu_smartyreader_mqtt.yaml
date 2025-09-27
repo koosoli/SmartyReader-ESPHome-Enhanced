@@ -865,12 +865,13 @@ button:
   - platform: restart
     name: "Restart Device"
 
-# Web server for diagnostics
-web_server:
-  port: 80
-  auth:
-    username: !secret web_username
-    password: !secret web_password
+# Web server (DISABLED to save RAM)
+# web_server:
+#   port: 80
+#   # auth:
+#   #   username: !secret web_username
+#   #   password: !secret web_password
+#   include_internal: true
 
 # Optional: Status LED indication
 #status_led:
