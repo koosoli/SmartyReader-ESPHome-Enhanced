@@ -34,12 +34,12 @@ wifi:
     dns1: !secret dns1
     dns2: 8.8.8.8
 
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-  ap:
-    ssid: !secret weigu_ap_ssid
-    password: !secret weigu_ap_password
+  # Fallback hotspot (captive portal) DISABLED to save RAM.
+  # ap:
+  #   ssid: !secret weigu_ap_ssid
+  #   password: !secret weigu_ap_password
 
-captive_portal:
+# captive_portal:
 
 # Enhanced UART configuration
 uart:
@@ -125,8 +125,9 @@ globals:
     initial_value: "false"
     
   # Power ring buffer (only consumption buffer is used)
+  # Changed from double[90] to float[90] to save 360 bytes of RAM.
   - id: power_consumption_buffer
-    type: double[90]
+    type: float[90]
 
 # DSMR configuration
 dsmr:
@@ -340,48 +341,48 @@ sensor:
       }
       return {};
 
-  # Excess solar power per phase
-  - platform: template
-    name: "Power Excess Solar L1"
-    id: power_excess_solar_l1
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
-        double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
+  # Excess solar power per phase (DISABLED to save RAM)
+  # - platform: template
+  #   name: "Power Excess Solar L1"
+  #   id: power_excess_solar_l1
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
+  #       double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
       
-  - platform: template
-    name: "Power Excess Solar L2"
-    id: power_excess_solar_l2
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
-        double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
+  # - platform: template
+  #   name: "Power Excess Solar L2"
+  #   id: power_excess_solar_l2
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
+  #       double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
       
-  - platform: template
-    name: "Power Excess Solar L3"
-    id: power_excess_solar_l3
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement  
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
-        double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
+  # - platform: template
+  #   name: "Power Excess Solar L3"
+  #   id: power_excess_solar_l3
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
+  #       double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
 
   # 15-minute power statistics (mean/max/min)
   - platform: template
@@ -395,7 +396,7 @@ sensor:
     lambda: |-
       if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
       
-      double sum = 0.0;
+      float sum = 0.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         sum += id(power_consumption_buffer)[i];
@@ -413,7 +414,7 @@ sensor:
     lambda: |-
       if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
       
-      double max_val = 0.0;
+      float max_val = 0.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         if (id(power_consumption_buffer)[i] > max_val) {
@@ -433,7 +434,7 @@ sensor:
     lambda: |-
       if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
       
-      double min_val = 999999.0;
+      float min_val = 999999.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         if (id(power_consumption_buffer)[i] < min_val) {
@@ -554,7 +555,7 @@ interval:
       lambda: |-
         // Update ring buffers for statistical calculations
         if (id(power_consumed).has_state()) {
-          double power = id(power_consumed).state * 1000.0; // Convert kW to W
+          float power = id(power_consumed).state * 1000.0; // Convert kW to W
           
           // Add to ring buffer
           int idx = id(buffer_index);
@@ -676,5 +677,5 @@ button:
 
 # Optional: Enable mDNS
 mdns:
-  disabled: false
+  disabled: true
 
