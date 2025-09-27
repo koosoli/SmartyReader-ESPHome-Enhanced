@@ -677,5 +677,3 @@ web_server:
 mdns:
   disabled: false
 
-# Optional: Captive portal for configuration
-captive_portal:
