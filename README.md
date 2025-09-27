@@ -20,7 +20,9 @@ This directory contains enhanced ESPHome configurations that bring advanced feat
 - All features from the enhanced version
 - Full MQTT integration with individual topics for each sensor
 - JSON payload publishing (similar to Arduino "PUBLISH_COOKED" mode)
-- Birth/will messages for connection status
+- **Last Will and Testament (LWT)**: Birth/will messages for reliable connection status monitoring
+- MQTT birth message: "online" when device connects
+- MQTT will message: "offline" when device disconnects unexpectedly
 - Compatible with OpenHAB, Node-RED, and other MQTT-based systems
 - Dual integration: Home Assistant API + MQTT
 
@@ -59,8 +61,9 @@ This directory contains enhanced ESPHome configurations that bring advanced feat
 
 ### Enhanced Connectivity
 - **MQTT Integration**: Full MQTT support with individual topics and JSON payloads
+- **Last Will and Testament (LWT)**: Automatic "offline" status when device disconnects unexpectedly
+- **Birth Messages**: Automatic "online" status when device connects successfully
 - **Static IP Support**: Optional static IP configuration
-- **Birth/Will Messages**: Connection status reporting for reliable monitoring
 - **Discovery Protocol**: Automatic Home Assistant device discovery
 
 ### Improved Diagnostics
@@ -191,6 +194,51 @@ globals:
     type: double[90]  # Adjust size: 90 = 15min, 180 = 30min
 ```
 
+## 📡 **MQTT Last Will and Testament (LWT)**
+
+### **What is LWT?**
+Last Will and Testament is an MQTT protocol feature that ensures reliable device status monitoring:
+
+- **Birth Message**: Published as "online" when the device successfully connects to MQTT broker
+- **Will Message**: Automatically published as "offline" by the broker if the device disconnects unexpectedly
+- **Retain Flag**: Status messages are retained so new subscribers immediately know device status
+- **Topic**: Published to `{topic_prefix}/status` (e.g., `lamsmarty/status`)
+
+### **How It Works**
+```yaml
+# MQTT LWT Configuration (in MQTT enhanced version)
+mqtt:
+  birth_message:
+    topic: lamsmarty/status
+    payload: "online"      # Published when device connects
+    retain: true
+  will_message:
+    topic: lamsmarty/status
+    payload: "offline"     # Published by broker if device disconnects
+    retain: true
+```
+
+### **Why Important for ESP Devices?**
+ESP devices can disconnect due to:
+- Power outages or brownouts
+- WiFi connectivity issues
+- Device crashes or freezes
+- Physical disconnection
+
+LWT ensures your home automation system knows the device status even when the device can't send a manual "goodbye" message.
+
+### **Monitoring in Home Assistant**
+```yaml
+# Create a binary sensor to monitor device status
+binary_sensor:
+  - platform: mqtt
+    name: "SmartyReader Status"
+    state_topic: "lamsmarty/status"
+    payload_on: "online"
+    payload_off: "offline"
+    device_class: connectivity
+```
+
 ## 🏠 Home Assistant Integration
 
 ### Automatic Discovery
@@ -271,6 +319,7 @@ logger:
 | Power Statistics | ✅ Ring Buffers | ✅ Simplified | ESPHome limitations |
 | Power Class Monitor | ✅ Full | ✅ Full | Complete implementation |
 | MQTT Publishing | ✅ Individual + JSON | ✅ Individual + JSON | Feature parity |
+| **MQTT LWT (Birth/Will)** | ✅ Full | ✅ Full | Complete parity |
 | Home Assistant | ❌ Manual | ✅ Native | ESPHome advantage |
 | OTA Updates | ✅ Arduino OTA | ✅ ESPHome OTA | Both supported |
 | Web Interface | ❌ None | ✅ Built-in | ESPHome advantage |
@@ -278,18 +327,44 @@ logger:
 | Raw Data Debug | ✅ Full | ✅ Limited | Arduino more detailed |
 | Ethernet Support | ✅ W5100/W5500 | ❌ Not supported | Arduino advantage |
 
+## 🙏 **Credits & Acknowledgments**
+
+### **Special Thanks to Guy WEILER**
+This project is built upon the **outstanding work** of **Guy WEILER** ([www.weigu.lu](https://www.weigu.lu)), who created the original Arduino-based SmartyReader project. His comprehensive implementation provided:
+
+- ✨ **Complete DSMR P1 port reading** with Luxembourg smartmeter decryption
+- ✨ **Advanced power analytics** including ring buffer statistical calculations  
+- ✨ **Power class monitoring** with exceed energy tracking and cost calculations
+- ✨ **Comprehensive MQTT integration** with individual topics and JSON payloads
+- ✨ **BME280 environmental sensor** integration
+- ✨ **Extensive debugging tools** and test programs
+- ✨ **Detailed documentation** and hardware specifications
+
+**Guy's Arduino implementation serves as the foundation** for all the advanced features in these ESPHome configurations. His meticulous attention to detail and comprehensive feature set made this ESPHome port possible.
+
+### **Original Project**
+- **Author**: Guy WEILER  
+- **Website**: [www.weigu.lu](https://www.weigu.lu)
+- **Project**: SmartyReader - Arduino-based Luxembourg smartmeter interface
+- **Hardware**: Complete P1 port interface boards and documentation
+
+### **ESPHome Enhancement**
+This ESPHome version modernizes Guy's excellent work by:
+- Adapting Arduino C++ code to ESPHome YAML configuration  
+- Adding native Home Assistant integration with automatic discovery
+- Providing simplified installation and maintenance
+- Maintaining full feature compatibility with the original
+
+**Thank you Guy for your amazing contribution to the Luxembourg IoT community!** 🚀
+
 ## 🤝 Contributing
 
 To improve these configurations:
 
 1. **Test thoroughly** with your hardware setup
 2. **Document changes** clearly in commit messages  
-3. **Maintain compatibility** with existing features
+3. **Maintain compatibility** with existing features and Guy's original design
 4. **Follow ESPHome best practices** for configuration structure
-
-## 📄 License
-
-These configurations are based on the original SmartyReader project by Guy WEILER (weigu.lu) and are provided under the same GPL v3 license terms.
 
 ## 🔗 Related Links
 
