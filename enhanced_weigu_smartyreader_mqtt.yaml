@@ -811,9 +811,10 @@ interval:
             auto time = id(sntp_time).now();
             json_payload += "\"ntp_datetime\":\"" + time.strftime("%Y-%m-%d %H:%M:%S") + "\"";
             
-            if (id(bme280_temp).has_state()) {
-              json_payload += ",\"bme280_temperature_C\":" + to_string(id(bme280_temp).state);
-            }
+            // BME280 sensor data (uncomment if you have BME280 sensor)
+            // if (id(bme280_temp).has_state()) {
+            //   json_payload += ",\"bme280_temperature_C\":" + to_string(id(bme280_temp).state);
+            // }
             if (id(exceed_class_3kw_day_kwh) > 0) {
               json_payload += ",\"energy_exceed_class_3kW_day_kWh\":" + to_string(id(exceed_class_3kw_day_kwh));
               json_payload += ",\"money_exceed_class_3kW_day_euro\":" + to_string(id(exceed_class_3kw_day_kwh) * 0.1139);
