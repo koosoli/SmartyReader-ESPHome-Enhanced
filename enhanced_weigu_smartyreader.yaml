@@ -58,12 +58,7 @@ time:
       - "lu.pool.ntp.org"
       - "pool.ntp.org"
 
-# --- Optional BME280 Environmental Sensor ---
-# The following two sections are for the BME280 sensor.
-# If you do not have this sensor, leave these sections commented out.
-# If you do have the sensor, uncomment both the 'i2c' and the 'bme280_i2c' blocks.
-
-# I2C for BME280 (Uncomment if you have the sensor)
+# I2C for BME280 sensor (optional - uncomment if you have one)
 # i2c:
 #   sda: D2  # GPIO4
 #   scl: D1  # GPIO5
@@ -269,7 +264,7 @@ sensor:
     name: "Wi-Fi Signal"
     update_interval: 60s
     
-  # BME280 Environmental sensor (Uncomment if you have the sensor)
+  # Optional BME280 Environmental sensor (uncomment if you have one)
   # - platform: bme280_i2c
   #   temperature:
   #     name: "BME280 Temperature"
