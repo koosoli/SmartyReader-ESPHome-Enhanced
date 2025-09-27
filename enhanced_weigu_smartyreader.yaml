@@ -1,0 +1,719 @@
+esphome:
+  name: weigu_smartyreader_enhanced
+  friendly_name: WeiGu SmartyReader Enhanced
+  # Custom includes for advanced calculations
+  includes:
+    - smarty_calculations.h
+  libraries:
+    - "ArduinoJson@6.21.3"
+
+esp8266:
+  board: d1_mini_pro
+
+# Enable logging
+logger:
+  level: INFO
+  # Optional: Enable UART logging to D4 for debugging (like Arduino version)
+  hardware_uart: UART1
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret weigu_api_key
+
+ota:
+- platform: esphome
+  password: !secret weigu_ota_password
+
+# Enhanced WiFi configuration with static IP option
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+  # Optional static IP configuration
+  manual_ip:
+    static_ip: !secret static_ip
+    gateway: !secret gateway_ip
+    subnet: !secret subnet_mask
+    dns1: !secret dns1
+    dns2: 8.8.8.8
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: !secret weigu_ap_ssid
+    password: !secret weigu_ap_password
+
+captive_portal:
+
+# Enhanced UART configuration
+uart:
+    id: uart_bus
+    rx_pin:
+      number: 3
+      inverted: true
+    baud_rate: 115200
+    rx_buffer_size: 2048
+
+# NTP Time synchronization
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
+    servers:
+      - "lu.pool.ntp.org"
+      - "pool.ntp.org"
+
+# I2C for BME280
+i2c:
+  sda: D2  # GPIO4
+  scl: D1  # GPIO5
+  scan: true
+
+# Global variables for advanced calculations
+globals:
+  - id: has_key
+    type: bool
+    restore_value: yes
+    initial_value: "false"
+  - id: stored_decryption_key
+    type: char[32]
+    restore_value: yes
+    
+  # Statistical calculation variables
+  - id: energy_consumption_midnight
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: energy_production_midnight
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: gas_consumption_midnight
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+    
+  # Power class monitoring (3kW, 7kW, 12kW)
+  - id: exceed_class_3kw_day_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: exceed_class_7kw_day_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: exceed_class_12kw_day_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+    
+  - id: exceed_class_3kw_month_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: exceed_class_7kw_month_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+  - id: exceed_class_12kw_month_kwh
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
+    
+  # Ring buffer indices for 15-minute calculations (90 samples for 15 min at 10s intervals)
+  - id: buffer_index
+    type: int
+    initial_value: "0"
+  - id: buffer_full
+    type: bool
+    initial_value: "false"
+    
+  # Power ring buffers (simplified - using arrays)
+  - id: power_consumption_buffer
+    type: double[90]
+  - id: power_production_buffer  
+    type: double[90]
+  - id: power_excess_buffer
+    type: double[90]
+
+# DSMR configuration
+dsmr:
+  id: dsmr_instance
+  decryption_key: !secret weigu_dsmr_key
+  max_telegram_length: 1800
+
+# Status LED
+status_led:
+  pin:
+    number: LED_BUILTIN
+    inverted: true
+
+# Enhanced sensor configuration
+sensor:
+  # Standard DSMR sensors
+  - platform: dsmr
+    energy_delivered_lux:
+      name: "Energy Consumed Luxembourg"
+      id: energy_consumed_lux
+      state_class: total_increasing
+      device_class: energy
+    energy_delivered_tariff1:
+      name: "Energy Consumed Tariff 1"
+      id: energy_consumed_t1
+      state_class: total_increasing
+      device_class: energy
+    energy_delivered_tariff2:
+      name: "Energy Consumed Tariff 2"
+      id: energy_consumed_t2
+      state_class: total_increasing
+      device_class: energy
+    energy_returned_lux:
+      name: "Energy Produced Luxembourg"
+      id: energy_produced_lux
+      state_class: total_increasing
+      device_class: energy
+    energy_returned_tariff1:
+      name: "Energy Produced Tariff 1"
+      id: energy_produced_t1
+      state_class: total_increasing
+      device_class: energy
+    energy_returned_tariff2:
+      name: "Energy Produced Tariff 2"
+      id: energy_produced_t2
+      state_class: total_increasing
+      device_class: energy
+    power_delivered:
+      name: "Power Consumed"
+      id: power_consumed
+      accuracy_decimals: 3
+      device_class: power
+    power_returned:
+      name: "Power Produced"
+      id: power_produced
+      accuracy_decimals: 3
+      device_class: power
+    electricity_failures:
+      name: "Electricity Failures"
+      id: electricity_failures
+      icon: mdi:alert
+    electricity_long_failures:
+      name: "Long Electricity Failures"
+      id: long_failures
+      icon: mdi:alert
+    voltage_l1:
+      name: "Voltage Phase 1"
+      id: voltage_l1
+      device_class: voltage
+    voltage_l2:
+      name: "Voltage Phase 2"
+      id: voltage_l2
+      device_class: voltage
+    voltage_l3:
+      name: "Voltage Phase 3"
+      id: voltage_l3
+      device_class: voltage
+    current_l1:
+      name: "Current Phase 1"
+      id: current_l1
+      device_class: current
+    current_l2:
+      name: "Current Phase 2"
+      id: current_l2
+      device_class: current
+    current_l3:
+      name: "Current Phase 3"
+      id: current_l3
+      device_class: current
+    power_delivered_l1:
+      name: "Power Consumed Phase 1"
+      id: power_consumed_l1
+      accuracy_decimals: 3
+      device_class: power
+    power_delivered_l2:
+      name: "Power Consumed Phase 2"
+      id: power_consumed_l2
+      accuracy_decimals: 3
+      device_class: power
+    power_delivered_l3:
+      name: "Power Consumed Phase 3"
+      id: power_consumed_l3
+      accuracy_decimals: 3
+      device_class: power
+    power_returned_l1:
+      name: "Power Produced Phase 1"
+      id: power_produced_l1
+      accuracy_decimals: 3
+      device_class: power
+    power_returned_l2:
+      name: "Power Produced Phase 2"
+      id: power_produced_l2
+      accuracy_decimals: 3
+      device_class: power
+    power_returned_l3:
+      name: "Power Produced Phase 3"
+      id: power_produced_l3
+      accuracy_decimals: 3
+      device_class: power
+    gas_delivered:
+      name: "Gas Consumed"
+      id: gas_consumed
+      state_class: total_increasing
+      device_class: gas
+    gas_delivered_be:
+      name: "Gas Consumed Belgium"
+      id: gas_consumed_be
+      state_class: total_increasing
+      device_class: gas
+
+  # System sensors
+  - platform: uptime
+    name: "Uptime"
+    
+  - platform: wifi_signal
+    name: "Wi-Fi Signal"
+    update_interval: 60s
+    
+  # BME280 Environmental sensor
+  - platform: bme280_i2c
+    temperature:
+      name: "BME280 Temperature"
+      id: bme280_temp
+      oversampling: 16x
+      device_class: temperature
+    pressure:
+      name: "BME280 Pressure"
+      id: bme280_pressure
+      device_class: atmospheric_pressure
+    humidity:
+      name: "BME280 Humidity"
+      id: bme280_humidity
+      device_class: humidity
+    address: 0x76
+    update_interval: 60s
+
+  # Calculated sensors using templates
+  - platform: template
+    name: "Energy Consumed Total kWh"
+    id: energy_consumed_calc
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: total_increasing
+    device_class: energy
+    lambda: |-
+      if (id(energy_consumed_lux).has_state()) {
+        return id(energy_consumed_lux).state;
+      }
+      return {};
+      
+  - platform: template
+    name: "Energy Produced Total kWh"
+    id: energy_produced_calc
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: total_increasing
+    device_class: energy
+    lambda: |-
+      if (id(energy_produced_lux).has_state()) {
+        return id(energy_produced_lux).state;
+      }
+      return {};
+
+  # Daily energy consumption
+  - platform: template
+    name: "Energy Consumed Today"
+    id: energy_consumed_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      if (id(energy_consumed_lux).has_state()) {
+        double current = id(energy_consumed_lux).state * 1000.0; // Convert to Wh
+        double midnight = id(energy_consumption_midnight);
+        if (midnight == 0.0) {
+          id(energy_consumption_midnight) = current;
+          return 0.0;
+        }
+        double today = current - midnight;
+        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0; // Convert back to kWh
+      }
+      return {};
+
+  # Daily energy production
+  - platform: template
+    name: "Energy Produced Today"
+    id: energy_produced_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      if (id(energy_produced_lux).has_state()) {
+        double current = id(energy_produced_lux).state * 1000.0; // Convert to Wh
+        double midnight = id(energy_production_midnight);
+        if (midnight == 0.0) {
+          id(energy_production_midnight) = current;
+          return 0.0;
+        }
+        double today = current - midnight;
+        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0; // Convert back to kWh
+      }
+      return {};
+
+  # Excess solar power calculation
+  - platform: template
+    name: "Power Excess Solar"
+    id: power_excess_solar
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    lambda: |-
+      if (id(power_produced).has_state() && id(power_consumed).has_state()) {
+        double excess = (id(power_produced).state * 1000) - (id(power_consumed).state * 1000);
+        return excess > 0 ? excess : 0.0;
+      }
+      return {};
+
+  # Excess solar power per phase
+  - platform: template
+    name: "Power Excess Solar L1"
+    id: power_excess_solar_l1
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    lambda: |-
+      if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
+        double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
+        return excess > 0 ? excess : 0.0;
+      }
+      return {};
+      
+  - platform: template
+    name: "Power Excess Solar L2"
+    id: power_excess_solar_l2
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    lambda: |-
+      if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
+        double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
+        return excess > 0 ? excess : 0.0;
+      }
+      return {};
+      
+  - platform: template
+    name: "Power Excess Solar L3"
+    id: power_excess_solar_l3
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement  
+    device_class: power
+    lambda: |-
+      if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
+        double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
+        return excess > 0 ? excess : 0.0;
+      }
+      return {};
+
+  # 15-minute power statistics (mean/max/min)
+  - platform: template
+    name: "Power Consumed 15min Mean"
+    id: power_consumed_15min_mean
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    update_interval: 60s
+    lambda: |-
+      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      
+      double sum = 0.0;
+      int count = id(buffer_full) ? 90 : id(buffer_index);
+      for (int i = 0; i < count; i++) {
+        sum += id(power_consumption_buffer)[i];
+      }
+      return sum / count;
+
+  - platform: template
+    name: "Power Consumed 15min Max"
+    id: power_consumed_15min_max
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    update_interval: 60s
+    lambda: |-
+      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      
+      double max_val = 0.0;
+      int count = id(buffer_full) ? 90 : id(buffer_index);
+      for (int i = 0; i < count; i++) {
+        if (id(power_consumption_buffer)[i] > max_val) {
+          max_val = id(power_consumption_buffer)[i];
+        }
+      }
+      return max_val;
+      
+  - platform: template
+    name: "Power Consumed 15min Min"
+    id: power_consumed_15min_min
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    state_class: measurement
+    device_class: power
+    update_interval: 60s
+    lambda: |-
+      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      
+      double min_val = 999999.0;
+      int count = id(buffer_full) ? 90 : id(buffer_index);
+      for (int i = 0; i < count; i++) {
+        if (id(power_consumption_buffer)[i] < min_val) {
+          min_val = id(power_consumption_buffer)[i];
+        }
+      }
+      return min_val < 999999.0 ? min_val : 0.0;
+
+  # Power class exceed monitoring
+  - platform: template
+    name: "Energy Exceed 3kW Today"
+    id: exceed_3kw_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      return id(exceed_class_3kw_day_kwh);
+
+  - platform: template
+    name: "Energy Exceed 7kW Today"
+    id: exceed_7kw_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      return id(exceed_class_7kw_day_kwh);
+      
+  - platform: template
+    name: "Energy Exceed 12kW Today"
+    id: exceed_12kw_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      return id(exceed_class_12kw_day_kwh);
+
+  # Monthly exceed tracking
+  - platform: template
+    name: "Energy Exceed 3kW Month"
+    id: exceed_3kw_month
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      return id(exceed_class_3kw_month_kwh);
+
+  - platform: template
+    name: "Energy Exceed 7kW Month"
+    id: exceed_7kw_month
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    lambda: |-
+      return id(exceed_class_7kw_month_kwh);
+
+  # Cost calculations (€0.1139 per kWh exceed cost)
+  - platform: template
+    name: "Cost Exceed 3kW Today"
+    id: cost_3kw_today
+    unit_of_measurement: "€"
+    accuracy_decimals: 2
+    state_class: measurement
+    lambda: |-
+      return id(exceed_class_3kw_day_kwh) * 0.1139;
+
+  - platform: template
+    name: "Cost Exceed 7kW Today"
+    id: cost_7kw_today
+    unit_of_measurement: "€"
+    accuracy_decimals: 2
+    state_class: measurement
+    lambda: |-
+      return id(exceed_class_7kw_day_kwh) * 0.1139;
+
+# Text sensors for additional information
+text_sensor:
+  - platform: dsmr
+    identification:
+      name: "DSMR Identification"
+    p1_version:
+      name: "DSMR Version"
+    p1_version_be:
+      name: "DSMR Version Belgium"
+      
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+    ssid:
+      name: "Wi-Fi SSID"
+    bssid:
+      name: "Wi-Fi BSSID"
+    mac_address:
+      name: "MAC Address"
+      
+  - platform: version
+    name: "ESPHome Version"
+    hide_timestamp: true
+
+  # Timestamp sensor
+  - platform: template
+    name: "Last Update"
+    id: last_update
+    lambda: |-
+      auto time = id(sntp_time).now();
+      return time.strftime("%Y-%m-%d %H:%M:%S");
+    update_interval: 10s
+
+# Intervals for calculations and midnight resets
+interval:
+  # Update ring buffers every 10 seconds
+  - interval: 10s
+    then:
+      lambda: |-
+        // Update ring buffers for statistical calculations
+        if (id(power_consumed).has_state()) {
+          double power = id(power_consumed).state * 1000.0; // Convert kW to W
+          
+          // Add to ring buffer
+          int idx = id(buffer_index);
+          id(power_consumption_buffer)[idx] = power;
+          
+          // Calculate power class exceed energy (for 10 seconds)
+          double exceed_3kw = power > 3000 ? (power - 3000) * 10.0 / 3600.0 : 0.0; // Ws to Wh
+          double exceed_7kw = power > 7000 ? (power - 7000) * 10.0 / 3600.0 : 0.0;
+          double exceed_12kw = power > 12000 ? (power - 12000) * 10.0 / 3600.0 : 0.0;
+          
+          // Add to daily totals (convert Wh to kWh)
+          id(exceed_class_3kw_day_kwh) += exceed_3kw / 1000.0;
+          id(exceed_class_7kw_day_kwh) += exceed_7kw / 1000.0;
+          id(exceed_class_12kw_day_kwh) += exceed_12kw / 1000.0;
+          
+          // Update buffer index
+          idx++;
+          if (idx >= 90) {
+            idx = 0;
+            id(buffer_full) = true;
+          }
+          id(buffer_index) = idx;
+        }
+
+  # Midnight reset for daily calculations
+  - interval: 60s
+    then:
+      lambda: |-
+        auto time = id(sntp_time).now();
+        
+        // Reset at midnight
+        if (time.hour == 0 && time.minute == 0) {
+          // Reset midnight values for daily calculations
+          if (id(energy_consumed_lux).has_state()) {
+            id(energy_consumption_midnight) = id(energy_consumed_lux).state * 1000.0;
+          }
+          if (id(energy_produced_lux).has_state()) {
+            id(energy_production_midnight) = id(energy_produced_lux).state * 1000.0;
+          }
+          if (id(gas_consumed).has_state()) {
+            id(gas_consumption_midnight) = id(gas_consumed).state;
+          }
+          
+          // Add daily exceed to monthly totals
+          id(exceed_class_3kw_month_kwh) += id(exceed_class_3kw_day_kwh);
+          id(exceed_class_7kw_month_kwh) += id(exceed_class_7kw_day_kwh);
+          id(exceed_class_12kw_month_kwh) += id(exceed_class_12kw_day_kwh);
+          
+          // Reset daily exceed counters
+          id(exceed_class_3kw_day_kwh) = 0.0;
+          id(exceed_class_7kw_day_kwh) = 0.0;
+          id(exceed_class_12kw_day_kwh) = 0.0;
+        }
+        
+        // Reset monthly on first day of month
+        if (time.day_of_month == 1 && time.hour == 0 && time.minute == 0) {
+          id(exceed_class_3kw_month_kwh) = 0.0;
+          id(exceed_class_7kw_month_kwh) = 0.0;
+          id(exceed_class_12kw_month_kwh) = 0.0;
+        }
+
+# Enhanced debug and diagnostic capabilities
+switch:
+  - platform: template
+    name: "Debug Mode"
+    id: debug_mode
+    optimistic: true
+    turn_on_action:
+      - logger.log: "Debug mode enabled"
+    turn_off_action:
+      - logger.log: "Debug mode disabled"
+
+  - platform: template
+    name: "Reset Daily Statistics"
+    id: reset_daily_stats
+    turn_on_action:
+      - lambda: |-
+          id(exceed_class_3kw_day_kwh) = 0.0;
+          id(exceed_class_7kw_day_kwh) = 0.0;
+          id(exceed_class_12kw_day_kwh) = 0.0;
+          ESP_LOGI("main", "Daily statistics reset");
+      - switch.turn_off: reset_daily_stats
+
+  - platform: template
+    name: "Reset Monthly Statistics"
+    id: reset_monthly_stats  
+    turn_on_action:
+      - lambda: |-
+          id(exceed_class_3kw_month_kwh) = 0.0;
+          id(exceed_class_7kw_month_kwh) = 0.0;
+          id(exceed_class_12kw_month_kwh) = 0.0;
+          ESP_LOGI("main", "Monthly statistics reset");
+      - switch.turn_off: reset_monthly_stats
+
+# Enhanced button for manual operations
+button:
+  - platform: template
+    name: "Clear Ring Buffers"
+    on_press:
+      - lambda: |-
+          // Clear all ring buffers
+          for (int i = 0; i < 90; i++) {
+            id(power_consumption_buffer)[i] = 0.0;
+            id(power_production_buffer)[i] = 0.0;
+            id(power_excess_buffer)[i] = 0.0;
+          }
+          id(buffer_index) = 0;
+          id(buffer_full) = false;
+          ESP_LOGI("main", "Ring buffers cleared");
+
+  - platform: restart
+    name: "Restart Device"
+
+# Optional: Web server for additional diagnostics  
+web_server:
+  port: 80
+  auth:
+    username: !secret web_username
+    password: !secret web_password
+  include_internal: true
+
+# Optional: Enable mDNS
+mdns:
+  disabled: false
+
+# Optional: Captive portal for configuration
+captive_portal:
