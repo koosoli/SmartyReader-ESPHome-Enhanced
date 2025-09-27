@@ -1,6 +1,10 @@
-# Enhanced SmartyReader ESPHome Configurations
+# Universal SmartyReader Enhanced ESPHome Template
 
-This directory contains enhanced ESPHome configurations that bring advanced features from the original Arduino-based SmartyReader project from Guy Weiler (www.weigu.lu) to ESPHome, making them compatible with Home Assistant while adding powerful new capabilities.
+This repository contains a universal ESPHome template for smart meter readers, designed to be compatible with both the **WeiGu SmartyReader** and the **Slimmelezer** hardware. The code has been tested for both devices. For more information on the Slimmelezer, you can visit the product page [here](https://www.zuidwijk.com/product/slimmelezer/).
+
+The `smartyreader-enhanced.yaml` file is the primary configuration and provides a rich set of features, including detailed energy monitoring, daily and monthly statistics, and power quality metrics. It is designed for seamless integration with Home Assistant.
+
+This project also preserves the features and spirit of the original Arduino-based SmartyReader project from Guy Weiler (www.weigu.lu), bringing them to the modern ESPHome ecosystem.
 
 ## 📁 Configuration Files
 
@@ -280,26 +284,32 @@ automation:
 
 ### Common Issues
 
-1. **No DSMR Data Received**
-   - Check P1 cable connections
-   - Verify DSMR decryption key
-   - Use test mode configuration for debugging
+1. **No DSMR Data Received / Entities are "Unknown"**
+   - **Activate P1 Port**: The most common cause is that the **P1 port on your smart meter is not activated**. You must contact your utility provider (e.g., Fluvius in Belgium) and ask them to enable it.
+   - **External Power**: For smart meters with older DSMR versions (before 5.0), the P1 port may not provide enough power. You may need to power the device with an external 5V micro-USB power supply. This can also solve general instability and rebooting issues.
+   - **Check Connections**: Check P1 cable connections.
+   - **Verify DSMR Key**: If applicable (e.g., in Luxembourg), verify your DSMR decryption key.
+   - **Use Test Mode**: Use the `smartyreader_test_mode.yaml` configuration for debugging raw data.
 
-2. **Incorrect Power Values**
-   - Verify signal inversion in UART configuration
-   - Check for interference on UART lines
-   - Review raw data using test mode
+2. **Incorrect Configuration for Slimmelezer**
+   - If you are using a Slimmelezer, ensure you have commented out the `esphome`/`esp8266` block for the WeiGu and uncommented the one for the Slimmelezer.
+   - Crucially, you must also comment out the `uart`/`dsmr` block for the WeiGu and uncomment the corresponding block for the Slimmelezer, which configures the correct pins (`D7` and `D5`).
 
-3. **Statistical Calculations Not Working**
-   - Ensure sufficient uptime for buffer fill
-   - Check global variable initialization
-   - Verify interval timers are running
+3. **Incorrect Power Values**
+   - Verify signal inversion in the `uart` configuration.
+   - Check for interference on UART lines.
+   - Review raw data using test mode.
 
-4. **Status LED Not Working / Random Flickering**
-   - **CRITICAL**: Cannot use both `hardware_uart: UART1` and `status_led` on same pin
-   - **Solution**: Comment out `hardware_uart: UART1` in logger section
-   - **Pin Conflict**: D4 (GPIO2) used by both UART1 TX and built-in LED
-   - **Result**: Logger works via WiFi, status LED functions properly
+4. **Statistical Calculations Not Working**
+   - Ensure sufficient uptime for the 15-minute buffer to fill.
+   - Check global variable initialization.
+   - Verify interval timers are running correctly.
+
+5. **Status LED Not Working / Random Flickering**
+   - **CRITICAL**: Cannot use both `hardware_uart: UART1` and `status_led` on the same pin.
+   - **Solution**: Comment out `hardware_uart: UART1` in the logger section if you are using the status LED.
+   - **Pin Conflict**: D4 (GPIO2) is used by both UART1 TX and the built-in LED on many boards.
+   - **Result**: Logger will work via WiFi, and the status LED will function properly.
 
 ### Debug Mode
 Enable comprehensive logging:
@@ -348,6 +358,11 @@ This project is built upon the **outstanding work** of **Guy WEILER** ([www.weig
 
 **Guy's Arduino implementation serves as the foundation** for all the advanced features in these ESPHome configurations. His meticulous attention to detail and comprehensive feature set made this ESPHome port possible.
 
+### **Community & Hardware**
+A special thank you also goes to:
+- The **ESPHome team and contributors** for creating the robust `dsmr` component that makes this integration possible.
+- **Marcel Zuidwijk** for the **Slimmelezer**, for providing an excellent open-hardware solution for the community.
+
 ### **Original Project**
 - **Author**: Guy WEILER  
 - **Website**: [www.weigu.lu](https://www.weigu.lu)
@@ -382,3 +397,9 @@ To improve these configurations:
 ---
 
 *This enhanced ESPHome configuration brings the full power of the Arduino SmartyReader to the ESPHome ecosystem while adding modern Home Assistant integration and improved diagnostics.*
+
+## ⚖️ License
+
+This project is released under the **GNU General Public License v3.0**. Please see the `LICENSE` file for full details.
+
+The separate MQTT script included in this repository remains **untested** and may not work as expected with this template. The primary, recommended method for integration is via the native ESPHome API.
