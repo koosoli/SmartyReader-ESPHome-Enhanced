@@ -140,10 +140,6 @@ globals:
     initial_value: "false"
   - id: power_consumption_buffer
     type: double[90]
-  - id: power_production_buffer  
-    type: double[90]
-  - id: power_excess_buffer
-    type: double[90]
 
 # DSMR configuration
 dsmr:
@@ -767,6 +763,46 @@ interval:
   # JSON payload publishing (like Arduino "PUBLISH_COOKED")
   - interval: 60s
     then:
+      - lambda: |-
+          // Publish JSON payload similar to Arduino version
+          std::string json_payload = "{";
+          auto time = id(sntp_time).now();
+          json_payload += "\"ntp_datetime\":\"" + time.strftime("%Y-%m-%d %H:%M:%S") + "\",";
+          
+          if (id(bme280_temp).has_state()) {
+            json_payload += "\"bme280_temperature_C\":" + to_string(id(bme280_temp).state) + ",";
+          }
+          if (id(bme280_humidity).has_state()) {
+            json_payload += "\"bme280_humidity_%\":" + to_string(id(bme280_humidity).state) + ",";
+          }
+          if (id(bme280_pressure).has_state()) {
+            json_payload += "\"bme280_pressure_hPa\":" + to_string(id(bme280_pressure).state) + ",";
+          }
+          if (id(energy_consumed_today).has_state()) {
+            json_payload += "\"energy_consumption_calc_cumul_day_Wh\":" + to_string(id(energy_consumed_today).state * 1000) + ",";
+          }
+          if (id(energy_produced_today).has_state()) {
+            json_payload += "\"energy_production_calc_cumul_day_Wh\":" + to_string(id(energy_produced_today).state * 1000) + ",";
+          }
+          if (id(power_excess_solar).has_state()) {
+            json_payload += "\"power_excess_solar_calc_W\":" + to_string(id(power_excess_solar).state) + ",";
+          }
+          
+          json_payload += "\"energy_exceed_class_3kW_day_kWh\":" + to_string(id(exceed_class_3kw_day_kwh)) + ",";
+          json_payload += "\"energy_exceed_class_7kW_day_kWh\":" + to_string(id(exceed_class_7kw_day_kwh)) + ",";
+          json_payload += "\"money_exceed_class_3kW_day_euro\":" + to_string(id(exceed_class_3kw_day_kwh) * 0.1139) + ",";
+          json_payload += "\"money_exceed_class_7kW_day_euro\":" + to_string(id(exceed_class_7kw_day_kwh) * 0.1139);
+          
+          json_payload += "}";
+          
+          // Remove last comma if present
+          size_t pos = json_payload.find_last_of(",}");
+          if (pos != std::string::npos && json_payload[pos] == ',') {
+            json_payload[pos] = '}';
+          }
+          
+          // Publish JSON payload
+          ESP_LOGI("mqtt", "Publishing JSON: %s", json_payload.c_str());
       - mqtt.publish:
           topic: ${mqtt_topic_prefix}
           payload: !lambda |-
@@ -816,8 +852,6 @@ button:
       - lambda: |-
           for (int i = 0; i < 90; i++) {
             id(power_consumption_buffer)[i] = 0.0;
-            id(power_production_buffer)[i] = 0.0;
-            id(power_excess_buffer)[i] = 0.0;
           }
           id(buffer_index) = 0;
           id(buffer_full) = false;
