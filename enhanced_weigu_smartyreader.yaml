@@ -9,7 +9,7 @@ esp8266:
 logger:
   level: INFO
   # Optional: Enable UART logging to D4 for debugging (like Arduino version)
-  hardware_uart: UART1
+  # hardware_uart: UART1  # DISABLED: Conflicts with status LED on D4 (GPIO2)
 
 # Enable Home Assistant API
 api:
@@ -281,33 +281,6 @@ sensor:
       device_class: humidity
     address: 0x76
     update_interval: 60s
-
-  # Calculated sensors using templates
-  - platform: template
-    name: "Energy Consumed Total kWh"
-    id: energy_consumed_calc
-    unit_of_measurement: "kWh"
-    accuracy_decimals: 3
-    state_class: total_increasing
-    device_class: energy
-    lambda: |-
-      if (id(energy_consumed_lux).has_state()) {
-        return id(energy_consumed_lux).state;
-      }
-      return {};
-      
-  - platform: template
-    name: "Energy Produced Total kWh"
-    id: energy_produced_calc
-    unit_of_measurement: "kWh"
-    accuracy_decimals: 3
-    state_class: total_increasing
-    device_class: energy
-    lambda: |-
-      if (id(energy_produced_lux).has_state()) {
-        return id(energy_produced_lux).state;
-      }
-      return {};
 
   # Daily energy consumption
   - platform: template
