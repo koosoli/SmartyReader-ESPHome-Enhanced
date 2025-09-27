@@ -15,6 +15,7 @@ esp8266:
 
 # Enable logging with optional UDP output (like Arduino version)
 logger:
+  baud_rate: 0
   level: INFO
   # Enable UDP logging for debugging (like original Arduino project)
   logs:
