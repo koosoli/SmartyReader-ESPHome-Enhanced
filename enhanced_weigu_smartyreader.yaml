@@ -7,6 +7,7 @@ esp8266:
 
 # Enable logging
 logger:
+  baud_rate: 0
   level: INFO
   # Optional: Enable UART logging to D4 for debugging (like Arduino version)
   # hardware_uart: UART1  # DISABLED: Conflicts with status LED on D4 (GPIO2)
