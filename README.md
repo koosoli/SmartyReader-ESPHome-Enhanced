@@ -295,6 +295,12 @@ automation:
    - Check global variable initialization
    - Verify interval timers are running
 
+4. **Status LED Not Working / Random Flickering**
+   - **CRITICAL**: Cannot use both `hardware_uart: UART1` and `status_led` on same pin
+   - **Solution**: Comment out `hardware_uart: UART1` in logger section
+   - **Pin Conflict**: D4 (GPIO2) used by both UART1 TX and built-in LED
+   - **Result**: Logger works via WiFi, status LED functions properly
+
 ### Debug Mode
 Enable comprehensive logging:
 ```yaml
