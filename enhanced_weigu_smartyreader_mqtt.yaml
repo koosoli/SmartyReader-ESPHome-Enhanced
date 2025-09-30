@@ -153,6 +153,8 @@ dsmr:
   id: dsmr_instance
   decryption_key: !secret weigu_dsmr_key
   max_telegram_length: 1800
+  gas_mbus_id: 1
+  water_mbus_id: 2
 
 # Comprehensive sensor configuration
 sensor:
