@@ -1,45 +1,16 @@
-esphome:
-  name: weigu_smartyreader_enhanced
-  friendly_name: WeiGu SmartyReader Enhanced
-
-esp8266:
-  board: d1_mini_pro
-
-# Enable logging
-logger:
-  baud_rate: 0
-  level: INFO
-  # Optional: Enable UART logging to D4 for debugging (like Arduino version)
-  # hardware_uart: UART1  # DISABLED: Conflicts with status LED on D4 (GPIO2)
-
-# Enable Home Assistant API
-api:
-  encryption:
-    key: !secret weigu_api_key
-
-ota:
-- platform: esphome
-  password: !secret weigu_ota_password
-
-# Enhanced WiFi configuration with static IP option
-wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  
-  # Optional static IP configuration
-  manual_ip:
-    static_ip: !secret static_ip
-    gateway: !secret gateway_ip
-    subnet: !secret subnet_mask
-    dns1: !secret dns1
-    dns2: 8.8.8.8
-
-  # Fallback hotspot (captive portal) DISABLED to save RAM.
-  # ap:
-  #   ssid: !secret weigu_ap_ssid
-  #   password: !secret weigu_ap_password
-
-# captive_portal:
+# ===================================================================
+# WeiGu SmartyReader Enhanced - ESPHome Configuration Snippet
+#
+# HOW TO USE:
+# 1. Create a new device in your ESPHome dashboard.
+# 2. In the configuration file for your new device, verify the
+#    'esphome', 'esp8266', 'logger', 'api', 'ota', and 'wifi'
+#    sections are correct for your hardware and network.
+# 3. Copy the entire content of THIS file.
+# 4. Paste it at the END of your new device's configuration file.
+# 5. Configure your 'secrets.yaml' file with the necessary
+#    values (like weigu_dsmr_key).
+# ===================================================================
 
 # Enhanced UART configuration
 uart:
