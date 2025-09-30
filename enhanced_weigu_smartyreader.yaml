@@ -80,6 +80,10 @@ globals:
     type: double
     restore_value: yes
     initial_value: "0.0"
+  - id: water_consumption_midnight
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
   - id: energy_production_midnight
     type: double
     restore_value: yes
@@ -257,6 +261,12 @@ sensor:
       id: gas_consumed_be
       state_class: total_increasing
       device_class: gas
+    water_delivered:
+      name: "Water Consumed"
+      id: water_consumed
+      state_class: total_increasing
+      device_class: water
+      icon: mdi:water
 
   # System sensors
   - platform: uptime
@@ -302,6 +312,27 @@ sensor:
         }
         double today = current - midnight;
         return (today > 0 && today < 200000) ? today / 1000.0 : 0.0; // Convert back to kWh
+      }
+      return {};
+
+  # Daily water consumption
+  - platform: template
+    name: "Water Consumed Today"
+    id: water_consumed_today
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: water
+    lambda: |-
+      if (id(water_consumed).has_state()) {
+        double current = id(water_consumed).state;
+        double midnight = id(water_consumption_midnight);
+        if (midnight == 0.0) {
+          id(water_consumption_midnight) = current;
+          return 0.0;
+        }
+        double today = current - midnight;
+        return (today > 0 && today < 1000) ? today : 0.0;
       }
       return {};
 
@@ -547,6 +578,21 @@ text_sensor:
       return time.strftime("%Y-%m-%d %H:%M:%S");
     update_interval: 10s
 
+  # Secondary meter type detection
+  - platform: template
+    name: "Secondary Meter Type"
+    id: secondary_meter_type
+    icon: "mdi:gas-cylinder-outline"
+    lambda: |-
+      if (id(gas_consumed).has_state()) {
+        return {"Gas"};
+      }
+      if (id(water_consumed).has_state()) {
+        return {"Water"};
+      }
+      return {"None"};
+    update_interval: 60s
+
 # Intervals for calculations and midnight resets
 interval:
   # Update ring buffers every 10 seconds
@@ -597,6 +643,9 @@ interval:
           }
           if (id(gas_consumed).has_state()) {
             id(gas_consumption_midnight) = id(gas_consumed).state;
+          }
+          if (id(water_consumed).has_state()) {
+            id(water_consumption_midnight) = id(water_consumed).state;
           }
           
           // Add daily exceed to monthly totals
