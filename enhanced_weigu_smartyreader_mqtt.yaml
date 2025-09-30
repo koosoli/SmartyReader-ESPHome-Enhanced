@@ -19,7 +19,7 @@ logger:
   level: INFO
   # Enable UDP logging for debugging (like original Arduino project)
   logs:
-    mqtt: DEBUG
+    mqtt: INFO
     sensor: INFO
 
 # Enable Home Assistant API
@@ -35,11 +35,13 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  ap:
-    ssid: !secret weigu_ap_ssid
-    password: !secret weigu_ap_password
 
-captive_portal:
+  # Fallback hotspot (captive portal) DISABLED to save RAM.
+  # ap:
+  #   ssid: !secret weigu_ap_ssid
+  #   password: !secret weigu_ap_password
+
+# captive_portal:
 
 # UART for smartmeter
 uart:
@@ -101,6 +103,10 @@ globals:
     type: double
     restore_value: yes
     initial_value: "0.0"
+  - id: water_consumption_midnight
+    type: double
+    restore_value: yes
+    initial_value: "0.0"
   - id: energy_production_midnight
     type: double
     restore_value: yes
@@ -140,7 +146,7 @@ globals:
     type: bool
     initial_value: "false"
   - id: power_consumption_buffer
-    type: double[90]
+    type: float[90]
 
 # DSMR configuration
 dsmr:
@@ -360,6 +366,18 @@ sensor:
               topic: ${mqtt_topic_prefix}/gas_index_m3
               payload: !lambda 'return to_string(x);'
               retain: true
+    water_delivered:
+      name: "Water Consumed"
+      id: water_consumed
+      state_class: total_increasing
+      device_class: water
+      icon: mdi:water
+      on_value:
+        then:
+          - mqtt.publish:
+              topic: ${mqtt_topic_prefix}/water_index_m3
+              payload: !lambda 'return to_string(x);'
+              retain: true
 
   # System sensors
   - platform: uptime
@@ -453,6 +471,32 @@ sensor:
             topic: ${mqtt_topic_prefix}/energy_production_calc_cumul_day_Wh
             payload: !lambda 'return to_string(x * 1000);' # Convert to Wh for MQTT
 
+  # Daily water consumption
+  - platform: template
+    name: "Water Consumed Today"
+    id: water_consumed_today
+    unit_of_measurement: "m³"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: water
+    lambda: |-
+      if (id(water_consumed).has_state()) {
+        double current = id(water_consumed).state;
+        double midnight = id(water_consumption_midnight);
+        if (midnight == 0.0) {
+          id(water_consumption_midnight) = current;
+          return 0.0;
+        }
+        double today = current - midnight;
+        return (today > 0 && today < 1000) ? today : 0.0;
+      }
+      return {};
+    on_value:
+      then:
+        - mqtt.publish:
+            topic: ${mqtt_topic_prefix}/water_consumption_calc_cumul_day_m3
+            payload: !lambda 'return to_string(x);'
+
   # Excess solar power calculations
   - platform: template
     name: "Power Excess Solar"
@@ -473,62 +517,63 @@ sensor:
             topic: ${mqtt_topic_prefix}/power_excess_solar_calc_W
             payload: !lambda 'return to_string(x);'
 
-  - platform: template
-    name: "Power Excess Solar L1"
-    id: power_excess_solar_l1
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
-        double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
-    on_value:
-      then:
-        - mqtt.publish:
-            topic: ${mqtt_topic_prefix}/power_excess_solar_l1_calc_W
-            payload: !lambda 'return to_string(x);'
-
-  - platform: template
-    name: "Power Excess Solar L2"
-    id: power_excess_solar_l2
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
-        double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
-    on_value:
-      then:
-        - mqtt.publish:
-            topic: ${mqtt_topic_prefix}/power_excess_solar_l2_calc_W
-            payload: !lambda 'return to_string(x);'
-
-  - platform: template
-    name: "Power Excess Solar L3"
-    id: power_excess_solar_l3
-    unit_of_measurement: "W"
-    accuracy_decimals: 0
-    state_class: measurement  
-    device_class: power
-    lambda: |-
-      if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
-        double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
-        return excess > 0 ? excess : 0.0;
-      }
-      return {};
-    on_value:
-      then:
-        - mqtt.publish:
-            topic: ${mqtt_topic_prefix}/power_excess_solar_l3_calc_W
-            payload: !lambda 'return to_string(x);'
+  # Excess solar power per phase (DISABLED to save RAM)
+  # - platform: template
+  #   name: "Power Excess Solar L1"
+  #   id: power_excess_solar_l1
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
+  #       double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
+  #   on_value:
+  #     then:
+  #       - mqtt.publish:
+  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l1_calc_W
+  #           payload: !lambda 'return to_string(x);'
+  #
+  # - platform: template
+  #   name: "Power Excess Solar L2"
+  #   id: power_excess_solar_l2
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
+  #       double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
+  #   on_value:
+  #     then:
+  #       - mqtt.publish:
+  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l2_calc_W
+  #           payload: !lambda 'return to_string(x);'
+  #
+  # - platform: template
+  #   name: "Power Excess Solar L3"
+  #   id: power_excess_solar_l3
+  #   unit_of_measurement: "W"
+  #   accuracy_decimals: 0
+  #   state_class: measurement
+  #   device_class: power
+  #   lambda: |-
+  #     if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
+  #       double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
+  #       return excess > 0 ? excess : 0.0;
+  #     }
+  #     return {};
+  #   on_value:
+  #     then:
+  #       - mqtt.publish:
+  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l3_calc_W
+  #           payload: !lambda 'return to_string(x);'
 
   # Statistical sensors (15-minute averages)
   - platform: template
@@ -696,6 +741,26 @@ text_sensor:
             topic: ${mqtt_topic_prefix}/ntp_datetime
             payload: !lambda 'return x;'
 
+  # Secondary meter type detection
+  - platform: template
+    name: "Secondary Meter Type"
+    id: secondary_meter_type
+    icon: "mdi:gas-cylinder-outline"
+    lambda: |-
+      if (id(gas_consumed).has_state()) {
+        return {"Gas"};
+      }
+      if (id(water_consumed).has_state()) {
+        return {"Water"};
+      }
+      return {"None"};
+    update_interval: 60s
+    on_value:
+      then:
+        - mqtt.publish:
+            topic: ${mqtt_topic_prefix}/secondary_meter_type
+            payload: !lambda 'return x;'
+
 # Intervals for advanced calculations
 interval:
   # Update ring buffers and power class calculations every 10 seconds
@@ -742,6 +807,9 @@ interval:
           }
           if (id(gas_consumed).has_state()) {
             id(gas_consumption_midnight) = id(gas_consumed).state;
+          }
+          if (id(water_consumed).has_state()) {
+            id(water_consumption_midnight) = id(water_consumed).state;
           }
           
           // Add to monthly totals
