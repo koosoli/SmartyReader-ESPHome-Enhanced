@@ -113,48 +113,113 @@ This project also preserves the features and spirit of the original Arduino-base
 - Device uptime and ESPHome version
 - Last update timestamps
 
-## ⚙️ Installation Instructions
+## ⚙️ Installation Instructions for Novice Users
 
-### 1. Choose Your Configuration
-```bash
-# For Home Assistant users (recommended)
-cp enhanced_weigu_smartyreader.yaml your_device_name.yaml
+This guide will walk you through setting up your SmartyReader from scratch using ESPHome.
 
-# For MQTT users or mixed environments
-cp enhanced_weigu_smartyreader_mqtt.yaml your_device_name.yaml
+### Step 1: Create a New Device in ESPHome
 
-# For testing and debugging
-cp smartyreader_test_mode.yaml your_device_name.yaml
-```
+1.  Open your **ESPHome Dashboard**.
+2.  Click the **"+ NEW DEVICE"** button.
+3.  Give your device a name (e.g., `smartyreader`).
+4.  **Important:** Select the correct device type for your hardware.
+    *   For the **WeiGu SmartyReader**, the recommended board is **"WEMOS D1 mini Pro"**.
+    *   For other boards like the **Slimmelezer**, choose **"Generic ESP8266"** or the specific board model you are using.
+5.  ESPHome will create a basic configuration file for you. Click **"EDIT"** to open it.
 
-### 2. Configure Secrets
-```bash
-# Copy template and edit with your values
-cp secrets_template.yaml secrets.yaml
-# Edit secrets.yaml with your WiFi, keys, etc.
-```
+Your new configuration file will look something like this. **Notice that ESPHome has already created unique keys for the `api` and `ota` sections.**
 
-### 3. Customize Device Settings
-Edit your chosen configuration file:
 ```yaml
-# Update device names
-substitutions:
-  device_name: your_smartyreader_name
-  friendly_name: "Your SmartyReader Name"
-  
-# Update DSMR key (Luxembourg smartmeter)
-dsmr:
-  decryption_key: !secret your_dsmr_key
+esphome:
+  name: smartyreader
+  friendly_name: smartyreader
+
+esp8266:
+  board: d1_mini_pro
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "ABCDE12345........................"
+
+ota:
+  password: "YOUR_OTA_PASSWORD"
+
+wifi:
+  ssid: "YourWiFi_SSID"
+  password: "YourWiFi_Password"
+
+# ... etc.
 ```
 
-### 4. Flash to Device
-```bash
-# Compile and upload
-esphome run your_device_name.yaml
+**Do not change this base configuration.** It has been generated specifically for your device and its security keys.
 
-# Or compile only
-esphome compile your_device_name.yaml
+### Step 2: Add the SmartyReader Configuration Snippet
+
+1.  Decide which version you want to use:
+    *   `enhanced_weigu_smartyreader.yaml`: For direct integration with Home Assistant (recommended for most users).
+    *   `enhanced_weigu_smartyreader_mqtt.yaml`: For integration via MQTT.
+
+2.  Open the chosen file from this repository and **copy its entire content**.
+
+3.  Go back to the configuration file for your new device in the ESPHome editor.
+
+4.  **Paste the copied content at the very end of the file.**
+
+Your final file should be structured like this:
+```yaml
+# (Your original configuration from Step 1 is here)
+esphome:
+  name: smartyreader
+# ... etc ...
+wifi:
+  ssid: "YourWiFi_SSID"
+  password: "YourWiFi_Password"
+
+# ===================================================================
+# WeiGu SmartyReader Enhanced - ESPHome Configuration Snippet
+# (The content you just pasted starts here)
+# ===================================================================
+uart:
+  id: uart_bus
+# ... and the rest of the snippet ...
 ```
+
+### Step 3: Configure Your Secrets
+
+Your SmartyReader needs secrets like your WiFi password and DSMR key to function.
+
+1.  In the ESPHome dashboard, find your `secrets.yaml` file. If it doesn't exist, create one.
+2.  Copy the contents of the `secrets_template.yaml` file from this repository and paste them into your `secrets.yaml`.
+3.  Update the values with your own information. At a minimum, you will need to provide:
+    *   `wifi_ssid` and `wifi_password`
+    *   `weigu_dsmr_key` (This is the 32-character key from your utility provider for Luxembourg meters).
+
+**Note on Static IP:** The `secrets_template.yaml` includes a commented-out section for a static IP address. This is an **advanced feature**. Most users should leave this section commented out and allow their device to get an IP address automatically via DHCP.
+
+An example `secrets.yaml` for a typical user might look like this:
+```yaml
+# WiFi Configuration
+wifi_ssid: "MyHomeWiFi"
+wifi_password: "MySuperSecretPassword"
+
+# DSMR Decryption Key (Luxembourg smartmeter)
+# Replace with your actual 32-character hex key
+weigu_dsmr_key: "AEBD21B769A6D13C0DF064E383682EFF"
+
+# ... other secrets as needed ...
+```
+
+### Step 4: Install and Start Your Device
+
+1.  In the ESPHome editor, click **"SAVE"** and then **"INSTALL"**.
+2.  Choose the method to flash the firmware to your device (e.g., "Plug into this computer").
+3.  Follow the on-screen instructions.
+
+Once installed, your SmartyReader will connect to your network and should automatically appear as a new device in Home Assistant (if you are using the native API).
 
 ## 🔧 Hardware Requirements
 
