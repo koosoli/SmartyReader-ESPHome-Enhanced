@@ -29,6 +29,7 @@ This project also preserves the features and spirit of the original Arduino-base
 - MQTT will message: "offline" when device disconnects unexpectedly
 - Compatible with OpenHAB, Node-RED, and other MQTT-based systems
 - Dual integration: Home Assistant API + MQTT
+- **RAM Optimized**: The MQTT version is now optimized for memory usage by disabling non-essential features like the web server and per-phase solar sensors.
 
 ### 3. `smartyreader_test_mode.yaml` - Testing & Debugging
 **For troubleshooting and development**
@@ -76,6 +77,10 @@ This project also preserves the features and spirit of the original Arduino-base
 - **Error Tracking**: Comprehensive error counting and reporting
 - **Status Indicators**: Real-time status updates and health monitoring
 
+### Water & Gas Metering
+- **Water Meter Support**: Includes sensors for total water consumption (`water_consumed`) and daily usage (`water_consumed_today`), fully integrated with daily and monthly statistics.
+- **Automatic Meter Detection**: A new `Secondary Meter Type` sensor automatically identifies whether the connected M-Bus meter is for "Gas" or "Water", simplifying setup.
+
 ### Smart Controls
 - **Manual Reset Functions**: Reset daily/monthly statistics on demand
 - **Buffer Management**: Clear statistical buffers when needed
@@ -87,8 +92,9 @@ This project also preserves the features and spirit of the original Arduino-base
 ### DSMR P1 Port Sensors
 - Energy consumption/production (total and per tariff)
 - Power consumption/production (total and per phase)
-- Voltage and current per phase  
-- Gas consumption
+- Voltage and current per phase
+- Gas and Water consumption
+- Secondary meter type detection (Gas/Water)
 - Electricity failures and voltage events
 
 ### Calculated Sensors
