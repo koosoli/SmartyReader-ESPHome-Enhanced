@@ -202,6 +202,22 @@ Smartmeter P1 Port → SmartyReader Board → ESP8266/ESP32
 globals:
   - id: power_consumption_buffer
     type: double[90]  # Adjust size: 90 = 15min, 180 = 30min
+
+### M-Bus Channel Configuration
+By default, the DSMR standard assigns gas meters to M-Bus channel 1 and water meters to channel 2. These configurations are now explicitly defined in the `.yaml` files:
+```yaml
+dsmr:
+  gas_mbus_id: 1
+  water_mbus_id: 2
+```
+If you have a non-standard setup, such as **only a water meter connected to channel 1**, you can easily adjust the configuration. To do this, simply set the `gas_mbus_id` to a different, unused channel (e.g., 0) and change the `water_mbus_id` to 1.
+
+**Example for a water-only setup on channel 1:**
+```yaml
+dsmr:
+  gas_mbus_id: 0   # Disable gas monitoring
+  water_mbus_id: 1 # Assign water meter to channel 1
+```
 ```
 
 ## 📡 **MQTT Last Will and Testament (LWT)**
