@@ -20,6 +20,7 @@ This project also preserves the features and spirit of the original Arduino-base
 - Web interface for diagnostics
 
 ### 2. `enhanced_weigu_smartyreader_mqtt.yaml` - MQTT Enhanced Version
+**⚠️ REQUIRES ESP32 - Not compatible with ESP8266 due to high memory usage**
 **For users preferring MQTT or using other home automation platforms**
 - All features from the enhanced version
 - Full MQTT integration with individual topics for each sensor
@@ -29,9 +30,22 @@ This project also preserves the features and spirit of the original Arduino-base
 - MQTT will message: "offline" when device disconnects unexpectedly
 - Compatible with OpenHAB, Node-RED, and other MQTT-based systems
 - Dual integration: Home Assistant API + MQTT
-- **RAM Optimized**: The MQTT version is now optimized for memory usage by disabling non-essential features like the web server and per-phase solar sensors.
+- **Hardware Requirement**: ESP32 with Arduino framework required due to:
+  - DSMR component only works with Arduino framework (not ESP-IDF)
+  - High RAM usage from MQTT client + extensive sensor publishing
+  - ESP8266 has insufficient memory (~80KB vs ESP32's ~520KB)
+- See `ESP32_MQTT_FIX_README.md` for detailed configuration instructions
 
-### 3. `smartyreader_test_mode.yaml` - Testing & Debugging
+### 3. `enhanced_slimmelezer.yaml` - SlimmeLezer Standalone Version
+**Complete configuration for SlimmeLezer hardware**
+- All features from the enhanced version
+- Pre-configured for SlimmeLezer hardware (D7 RX pin, D5 request pin)
+- Standalone file - no need to merge with other configs
+- Dynamic DSMR key setting via Home Assistant service
+- Compatible with Belgian and Luxembourg smart meters
+- ESP8266 (D1 Mini) optimized
+
+### 4. `smartyreader_test_mode.yaml` - Testing & Debugging
 **For troubleshooting and development**
 - Raw P1 data inspection (hex output like Arduino test program)
 - Connection diagnostics and error counting
@@ -39,12 +53,20 @@ This project also preserves the features and spirit of the original Arduino-base
 - Debug logging and status reporting
 - Minimal sensor configuration for testing
 
-### 4. `weigu-ESPhome.txt` - Original Simple Version
+### 4. `smartyreader_test_mode.yaml` - Testing & Debugging
+**For troubleshooting and development**
+- Raw P1 data inspection (hex output like Arduino test program)
+- Connection diagnostics and error counting
+- Telegram reception monitoring
+- Debug logging and status reporting
+- Minimal sensor configuration for testing
+
+### 5. `weigu-ESPhome.txt` - Original Simple Version
 **Basic configuration for reference**
 - Your current working configuration
 - Simple DSMR reading without advanced features
 
-### 5. `secrets_template.yaml` - Configuration Template
+### 6. `secrets_template.yaml` - Configuration Template
 **Security and credentials**
 - Template for all required secrets
 - WiFi, API keys, MQTT credentials
