@@ -1,17 +1,22 @@
 # ===================================================================
 # WeiGu SmartyReader MQTT Enhanced - ESPHome Configuration Snippet
+# FIXED VERSION - Addresses ESP32 framework and memory issues
 #
 # HOW TO USE:
 # 1. Create a new device in your ESPHome dashboard.
-# 2. In the configuration file for your new device, verify the
-#    'esphome', 'esp8266', 'logger', 'api', 'ota', and 'wifi'
-#    sections are correct for your hardware and network.
+# 2. In the configuration file for your new device, ADD THIS AT THE TOP:
+#
+#    esp32:
+#      board: esp32dev  # or your specific board
+#      framework:
+#        type: arduino
+#        version: recommended
+#
 # 3. Copy the entire content of THIS file.
 # 4. Paste it at the END of your new device's configuration file.
 # 5. Configure your 'secrets.yaml' file with the necessary
 #    values (like weigu_dsmr_key, mqtt_broker, etc.).
 # ===================================================================
-
 
 substitutions:
   device_name: weigu_smartyreader_mqtt
@@ -118,8 +123,9 @@ globals:
   - id: buffer_full
     type: bool
     initial_value: "false"
+  # Reduced buffer size from 90 to 60 to save memory
   - id: power_consumption_buffer
-    type: float[90]
+    type: float[60]
 
 # DSMR configuration
 dsmr:
@@ -139,12 +145,17 @@ sensor:
       device_class: energy
       filters:
         - throttle: 10s
+      # Reduced MQTT publishing frequency to save memory
       on_value:
         then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/act_energy_imported_kWh
-              payload: !lambda 'return to_string(x);'
-              retain: true
+          - if:
+              condition:
+                lambda: 'return (millis() % 30000) < 1000;'
+              then:
+                - mqtt.publish:
+                    topic: ${mqtt_topic_prefix}/act_energy_imported_kWh
+                    payload: !lambda 'return to_string(x);'
+                    retain: true
               
     energy_delivered_tariff1:
       name: "Energy Consumed Tariff 1"
@@ -155,10 +166,14 @@ sensor:
         - throttle: 10s
       on_value:
         then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/energy_delivered_tariff1_kWh
-              payload: !lambda 'return to_string(x);'
-              retain: true
+          - if:
+              condition:
+                lambda: 'return (millis() % 30000) < 1000;'
+              then:
+                - mqtt.publish:
+                    topic: ${mqtt_topic_prefix}/energy_delivered_tariff1_kWh
+                    payload: !lambda 'return to_string(x);'
+                    retain: true
               
     energy_delivered_tariff2:
       name: "Energy Consumed Tariff 2"
@@ -177,10 +192,14 @@ sensor:
         - throttle: 10s
       on_value:
         then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/act_energy_exported_kWh
-              payload: !lambda 'return to_string(x);'
-              retain: true
+          - if:
+              condition:
+                lambda: 'return (millis() % 30000) < 1000;'
+              then:
+                - mqtt.publish:
+                    topic: ${mqtt_topic_prefix}/act_energy_exported_kWh
+                    payload: !lambda 'return to_string(x);'
+                    retain: true
               
     energy_returned_tariff1:
       name: "Energy Produced Tariff 1"
@@ -239,7 +258,7 @@ sensor:
       id: voltage_l1
       device_class: voltage
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -251,7 +270,7 @@ sensor:
       id: voltage_l2
       device_class: voltage
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -263,7 +282,7 @@ sensor:
       id: voltage_l3
       device_class: voltage
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -275,7 +294,7 @@ sensor:
       id: current_l1
       device_class: current
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -287,7 +306,7 @@ sensor:
       id: current_l2
       device_class: current
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -299,7 +318,7 @@ sensor:
       id: current_l3
       device_class: current
       filters:
-        - throttle: 10s
+        - throttle: 30s  # Reduced frequency
       on_value:
         then:
           - mqtt.publish:
@@ -532,7 +551,7 @@ sensor:
       if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       double sum = 0.0;
-      int count = id(buffer_full) ? 90 : id(buffer_index);
+      int count = id(buffer_full) ? 60 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         sum += id(power_consumption_buffer)[i];
       }
@@ -555,7 +574,7 @@ sensor:
       if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       double max_val = 0.0;
-      int count = id(buffer_full) ? 90 : id(buffer_index);
+      int count = id(buffer_full) ? 60 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         if (id(power_consumption_buffer)[i] > max_val) {
           max_val = id(power_consumption_buffer)[i];
@@ -580,7 +599,7 @@ sensor:
       if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       double min_val = 999999.0;
-      int count = id(buffer_full) ? 90 : id(buffer_index);
+      int count = id(buffer_full) ? 60 : id(buffer_index);
       for (int i = 0; i < count; i++) {
         if (id(power_consumption_buffer)[i] < min_val) {
           min_val = id(power_consumption_buffer)[i];
@@ -681,7 +700,7 @@ text_sensor:
     lambda: |-
       auto time = id(sntp_time).now();
       return time.strftime("%Y-%m-%d %H:%M:%S");
-    update_interval: 10s
+    update_interval: 30s  # Reduced frequency
     on_value:
       then:
         - mqtt.publish:
@@ -709,7 +728,7 @@ text_sensor:
 
 # Intervals
 interval:
-  - interval: 10s
+  - interval: 15s  # Changed from 10s to 15s
     then:
       lambda: |-
         if (id(power_consumed).has_state()) {
@@ -718,16 +737,16 @@ interval:
           int idx = id(buffer_index);
           id(power_consumption_buffer)[idx] = power;
           
-          double exceed_3kw = power > 3000 ? (power - 3000) * 10.0 / 3600.0 : 0.0;
-          double exceed_7kw = power > 7000 ? (power - 7000) * 10.0 / 3600.0 : 0.0;
-          double exceed_12kw = power > 12000 ? (power - 12000) * 10.0 / 3600.0 : 0.0;
+          double exceed_3kw = power > 3000 ? (power - 3000) * 15.0 / 3600.0 : 0.0;
+          double exceed_7kw = power > 7000 ? (power - 7000) * 15.0 / 3600.0 : 0.0;
+          double exceed_12kw = power > 12000 ? (power - 12000) * 15.0 / 3600.0 : 0.0;
           
           id(exceed_class_3kw_day_kwh) += exceed_3kw / 1000.0;
           id(exceed_class_7kw_day_kwh) += exceed_7kw / 1000.0;
           id(exceed_class_12kw_day_kwh) += exceed_12kw / 1000.0;
           
           idx++;
-          if (idx >= 90) {
+          if (idx >= 60) {  # Changed from 90 to 60
             idx = 0;
             id(buffer_full) = true;
           }
@@ -768,32 +787,28 @@ interval:
           id(exceed_class_12kw_month_kwh) = 0.0;
         }
 
-  # Simplified JSON publishing (Fixed)
-  - interval: 60s
+  # Optimized JSON publishing - Reduced size
+  - interval: 120s  # Changed from 60s to 120s
     then:
       - mqtt.publish:
           topic: ${mqtt_topic_prefix}/summary
           payload: !lambda |-
-            char buf[512];
+            char buf[384];  # Reduced from 512
             auto time = id(sntp_time).now();
             
             snprintf(buf, sizeof(buf),
-              "{\"ntp_datetime\":\"%04d-%02d-%02d %02d:%02d:%02d\","
-              "\"energy_consumption_day_Wh\":%.0f,"
-              "\"energy_production_day_Wh\":%.0f,"
-              "\"power_excess_solar_W\":%.0f,"
-              "\"energy_exceed_3kW_day_kWh\":%.3f,"
-              "\"energy_exceed_7kW_day_kWh\":%.3f,"
-              "\"cost_exceed_3kW_day_euro\":%.2f,"
-              "\"cost_exceed_7kW_day_euro\":%.2f}",
-              time.year, time.month, time.day_of_month, time.hour, time.minute, time.second,
+              "{\"time\":\"%02d:%02d:%02d\","
+              "\"e_day\":%.0f,"
+              "\"p_day\":%.0f,"
+              "\"solar\":%.0f,"
+              "\"exc3\":%.3f,"
+              "\"exc7\":%.3f}",
+              time.hour, time.minute, time.second,
               id(energy_consumed_today).state * 1000.0,
               id(energy_produced_today).state * 1000.0,
               id(power_excess_solar).state,
               id(exceed_class_3kw_day_kwh),
-              id(exceed_class_7kw_day_kwh),
-              id(exceed_class_3kw_day_kwh) * 0.1139,
-              id(exceed_class_7kw_day_kwh) * 0.1139
+              id(exceed_class_7kw_day_kwh)
             );
             
             return std::string(buf);
@@ -823,7 +838,7 @@ button:
     name: "Clear Ring Buffers"
     on_press:
       - lambda: |-
-          for (int i = 0; i < 90; i++) {
+          for (int i = 0; i < 60; i++) {  # Changed from 90 to 60
             id(power_consumption_buffer)[i] = 0.0;
           }
           id(buffer_index) = 0;
