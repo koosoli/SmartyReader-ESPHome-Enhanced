@@ -1,5 +1,5 @@
 # ===================================================================
-# WeiGu SmartyReader Enhanced - ESPHome Configuration Snippet
+# WeiGu SmartyReader Enhanced - ESPHome Configuration (OPTIMIZED)
 #
 # HOW TO USE:
 # 1. Create a new device in your ESPHome dashboard.
@@ -12,7 +12,7 @@
 #    values (like weigu_dsmr_key).
 # ===================================================================
 
-# Enhanced UART configuration
+# UART configuration
 uart:
     id: uart_bus
     rx_pin:
@@ -99,8 +99,7 @@ globals:
     type: bool
     initial_value: "false"
     
-  # Power ring buffer (only consumption buffer is used)
-  # Changed from double[90] to float[90] to save 360 bytes of RAM.
+  # Power ring buffer
   - id: power_consumption_buffer
     type: float[90]
 
@@ -120,48 +119,64 @@ dsmr:
 
 # Enhanced sensor configuration
 sensor:
-  # Standard DSMR sensors
+  # Standard DSMR sensors (with throttling to reduce Home Assistant API traffic)
   - platform: dsmr
     energy_delivered_lux:
       name: "Energy Consumed Luxembourg"
       id: energy_consumed_lux
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     energy_delivered_tariff1:
       name: "Energy Consumed Tariff 1"
       id: energy_consumed_t1
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     energy_delivered_tariff2:
       name: "Energy Consumed Tariff 2"
       id: energy_consumed_t2
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     energy_returned_lux:
       name: "Energy Produced Luxembourg"
       id: energy_produced_lux
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     energy_returned_tariff1:
       name: "Energy Produced Tariff 1"
       id: energy_produced_t1
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     energy_returned_tariff2:
       name: "Energy Produced Tariff 2"
       id: energy_produced_t2
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 60s
     power_delivered:
       name: "Power Consumed"
       id: power_consumed
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_returned:
       name: "Power Produced"
       id: power_produced
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     electricity_failures:
       name: "Electricity Failures"
       id: electricity_failures
@@ -174,76 +189,100 @@ sensor:
       name: "Voltage Phase 1"
       id: voltage_l1
       device_class: voltage
+      filters:
+        - throttle: 10s
     voltage_l2:
       name: "Voltage Phase 2"
       id: voltage_l2
       device_class: voltage
+      filters:
+        - throttle: 10s
     voltage_l3:
       name: "Voltage Phase 3"
       id: voltage_l3
       device_class: voltage
+      filters:
+        - throttle: 10s
     current_l1:
       name: "Current Phase 1"
       id: current_l1
       device_class: current
+      filters:
+        - throttle: 10s
     current_l2:
       name: "Current Phase 2"
       id: current_l2
       device_class: current
+      filters:
+        - throttle: 10s
     current_l3:
       name: "Current Phase 3"
       id: current_l3
       device_class: current
+      filters:
+        - throttle: 10s
     power_delivered_l1:
       name: "Power Consumed Phase 1"
       id: power_consumed_l1
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_delivered_l2:
       name: "Power Consumed Phase 2"
       id: power_consumed_l2
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_delivered_l3:
       name: "Power Consumed Phase 3"
       id: power_consumed_l3
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_returned_l1:
       name: "Power Produced Phase 1"
       id: power_produced_l1
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_returned_l2:
       name: "Power Produced Phase 2"
       id: power_produced_l2
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     power_returned_l3:
       name: "Power Produced Phase 3"
       id: power_produced_l3
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
     gas_delivered:
       name: "Gas Consumed"
       id: gas_consumed
       state_class: total_increasing
       device_class: gas
-    gas_delivered_be:
-      name: "Gas Consumed Belgium"
-      id: gas_consumed_be
-      state_class: total_increasing
-      device_class: gas
+      filters:
+        - throttle: 300s  # Gas updates infrequently anyway
     water_delivered:
       name: "Water Consumed"
       id: water_consumed
       state_class: total_increasing
       device_class: water
       icon: mdi:water
+      filters:
+        - throttle: 60s
 
   # System sensors
   - platform: uptime
     name: "Uptime"
+    update_interval: 60s
     
   - platform: wifi_signal
     name: "Wi-Fi Signal"
@@ -275,16 +314,39 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       if (id(energy_consumed_lux).has_state()) {
-        double current = id(energy_consumed_lux).state * 1000.0; // Convert to Wh
+        double current = id(energy_consumed_lux).state * 1000.0;
         double midnight = id(energy_consumption_midnight);
         if (midnight == 0.0) {
           id(energy_consumption_midnight) = current;
           return 0.0;
         }
         double today = current - midnight;
-        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0; // Convert back to kWh
+        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0;
+      }
+      return {};
+
+  # Daily energy production
+  - platform: template
+    name: "Energy Produced Today"
+    id: energy_produced_today
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    update_interval: 60s
+    lambda: |-
+      if (id(energy_produced_lux).has_state()) {
+        double current = id(energy_produced_lux).state * 1000.0;
+        double midnight = id(energy_production_midnight);
+        if (midnight == 0.0) {
+          id(energy_production_midnight) = current;
+          return 0.0;
+        }
+        double today = current - midnight;
+        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0;
       }
       return {};
 
@@ -296,6 +358,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: water
+    update_interval: 60s
     lambda: |-
       if (id(water_consumed).has_state()) {
         double current = id(water_consumed).state;
@@ -309,24 +372,25 @@ sensor:
       }
       return {};
 
-  # Daily energy production
+  # Daily gas consumption (NEW - was missing)
   - platform: template
-    name: "Energy Produced Today"
-    id: energy_produced_today
-    unit_of_measurement: "kWh"
+    name: "Gas Consumed Today"
+    id: gas_consumed_today
+    unit_of_measurement: "m³"
     accuracy_decimals: 3
     state_class: measurement
-    device_class: energy
+    device_class: gas
+    update_interval: 60s
     lambda: |-
-      if (id(energy_produced_lux).has_state()) {
-        double current = id(energy_produced_lux).state * 1000.0; // Convert to Wh
-        double midnight = id(energy_production_midnight);
+      if (id(gas_consumed).has_state()) {
+        double current = id(gas_consumed).state;
+        double midnight = id(gas_consumption_midnight);
         if (midnight == 0.0) {
-          id(energy_production_midnight) = current;
+          id(gas_consumption_midnight) = current;
           return 0.0;
         }
         double today = current - midnight;
-        return (today > 0 && today < 200000) ? today / 1000.0 : 0.0; // Convert back to kWh
+        return (today > 0 && today < 1000) ? today : 0.0;
       }
       return {};
 
@@ -338,6 +402,7 @@ sensor:
     accuracy_decimals: 0
     state_class: measurement
     device_class: power
+    update_interval: 10s
     lambda: |-
       if (id(power_produced).has_state() && id(power_consumed).has_state()) {
         double excess = (id(power_produced).state * 1000) - (id(power_consumed).state * 1000);
@@ -353,6 +418,7 @@ sensor:
   #   accuracy_decimals: 0
   #   state_class: measurement
   #   device_class: power
+  #   update_interval: 10s
   #   lambda: |-
   #     if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
   #       double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
@@ -367,6 +433,7 @@ sensor:
   #   accuracy_decimals: 0
   #   state_class: measurement
   #   device_class: power
+  #   update_interval: 10s
   #   lambda: |-
   #     if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
   #       double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
@@ -381,6 +448,7 @@ sensor:
   #   accuracy_decimals: 0
   #   state_class: measurement
   #   device_class: power
+  #   update_interval: 10s
   #   lambda: |-
   #     if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
   #       double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
@@ -398,7 +466,7 @@ sensor:
     device_class: power
     update_interval: 60s
     lambda: |-
-      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       float sum = 0.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
@@ -416,7 +484,7 @@ sensor:
     device_class: power
     update_interval: 60s
     lambda: |-
-      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       float max_val = 0.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
@@ -436,7 +504,7 @@ sensor:
     device_class: power
     update_interval: 60s
     lambda: |-
-      if (!id(buffer_full) && id(buffer_index) < 10) return {}; // Need at least some data
+      if (!id(buffer_full) && id(buffer_index) < 10) return {};
       
       float min_val = 999999.0;
       int count = id(buffer_full) ? 90 : id(buffer_index);
@@ -447,7 +515,7 @@ sensor:
       }
       return min_val < 999999.0 ? min_val : 0.0;
 
-  # Power class exceed monitoring
+  # Power class exceed monitoring - DAILY
   - platform: template
     name: "Energy Exceed 3kW Today"
     id: exceed_3kw_today
@@ -455,6 +523,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_3kw_day_kwh);
 
@@ -465,6 +534,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_7kw_day_kwh);
       
@@ -475,10 +545,11 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_12kw_day_kwh);
 
-  # Monthly exceed tracking
+  # Power class exceed monitoring - MONTHLY
   - platform: template
     name: "Energy Exceed 3kW Month"
     id: exceed_3kw_month
@@ -486,6 +557,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 300s
     lambda: |-
       return id(exceed_class_3kw_month_kwh);
 
@@ -496,8 +568,20 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 300s
     lambda: |-
       return id(exceed_class_7kw_month_kwh);
+
+  - platform: template
+    name: "Energy Exceed 12kW Month"
+    id: exceed_12kw_month
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    state_class: measurement
+    device_class: energy
+    update_interval: 300s
+    lambda: |-
+      return id(exceed_class_12kw_month_kwh);
 
   # Cost calculations (€0.1139 per kWh exceed cost)
   - platform: template
@@ -506,6 +590,7 @@ sensor:
     unit_of_measurement: "€"
     accuracy_decimals: 2
     state_class: measurement
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_3kw_day_kwh) * 0.1139;
 
@@ -515,8 +600,39 @@ sensor:
     unit_of_measurement: "€"
     accuracy_decimals: 2
     state_class: measurement
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_7kw_day_kwh) * 0.1139;
+
+  - platform: template
+    name: "Cost Exceed 12kW Today"
+    id: cost_12kw_today
+    unit_of_measurement: "€"
+    accuracy_decimals: 2
+    state_class: measurement
+    update_interval: 60s
+    lambda: |-
+      return id(exceed_class_12kw_day_kwh) * 0.1139;
+
+  - platform: template
+    name: "Cost Exceed 3kW Month"
+    id: cost_3kw_month
+    unit_of_measurement: "€"
+    accuracy_decimals: 2
+    state_class: measurement
+    update_interval: 300s
+    lambda: |-
+      return id(exceed_class_3kw_month_kwh) * 0.1139;
+
+  - platform: template
+    name: "Cost Exceed 7kW Month"
+    id: cost_7kw_month
+    unit_of_measurement: "€"
+    accuracy_decimals: 2
+    state_class: measurement
+    update_interval: 300s
+    lambda: |-
+      return id(exceed_class_7kw_month_kwh) * 0.1139;
 
 # Text sensors for additional information
 text_sensor:
@@ -700,4 +816,3 @@ button:
 # Optional: Enable mDNS
 mdns:
   disabled: true
-
