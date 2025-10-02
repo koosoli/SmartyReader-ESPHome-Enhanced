@@ -51,11 +51,11 @@ mqtt:
   
   # Birth and Will messages (like Arduino version)
   birth_message:
-    topic: ${mqtt_topic_prefix}/
+    topic: ${mqtt_topic_prefix}/status
     payload: "online"
     retain: true
   will_message:
-    topic: ${mqtt_topic_prefix}/  
+    topic: ${mqtt_topic_prefix}/status
     payload: "offline"
     retain: true
   
