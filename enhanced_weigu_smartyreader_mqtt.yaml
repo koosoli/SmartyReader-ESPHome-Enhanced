@@ -12,6 +12,7 @@
 #    values (like weigu_dsmr_key, mqtt_broker, etc.).
 # ===================================================================
 
+
 substitutions:
   device_name: weigu_smartyreader_mqtt
   friendly_name: "WeiGu SmartyReader MQTT Enhanced"
@@ -34,13 +35,7 @@ time:
     servers:
       - "lu.pool.ntp.org"
 
-# I2C for BME280 sensor (optional - uncomment if you have one)
-# i2c:
-#   sda: D2
-#   scl: D1
-#   scan: true
-
-# MQTT Configuration (in addition to Home Assistant API)
+# MQTT Configuration
 mqtt:
   broker: !secret mqtt_broker
   port: !secret mqtt_port
@@ -49,7 +44,6 @@ mqtt:
   client_id: ${device_name}
   topic_prefix: ${mqtt_topic_prefix}
   
-  # Birth and Will messages (like Arduino version)
   birth_message:
     topic: ${mqtt_topic_prefix}/status
     payload: "online"
@@ -59,12 +53,17 @@ mqtt:
     payload: "offline"
     retain: true
   
-  # Discovery for Home Assistant via MQTT
   discovery: true
   discovery_retain: true
   discovery_prefix: homeassistant
+  
+  # Add logging for MQTT connection status
+  on_connect:
+    - logger.log: "MQTT Connected!"
+  on_disconnect:
+    - logger.log: "MQTT Disconnected!"
 
-# Global variables (same as enhanced version)
+# Global variables
 globals:
   - id: has_key
     type: bool
@@ -130,224 +129,283 @@ dsmr:
   gas_mbus_id: 1
   water_mbus_id: 2
 
-# Comprehensive sensor configuration
+# Sensor configuration
 sensor:
-  # Core DSMR sensors with MQTT publishing
   - platform: dsmr
     energy_delivered_lux:
       name: "Energy Consumed Luxembourg"
       id: energy_consumed_lux
       state_class: total_increasing
       device_class: energy
-      # Custom MQTT publishing (in addition to auto-discovery)
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_energy_imported_kWh
               payload: !lambda 'return to_string(x);'
               retain: true
+              
     energy_delivered_tariff1:
       name: "Energy Consumed Tariff 1"
       id: energy_consumed_t1
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/energy_delivered_tariff1_kWh
               payload: !lambda 'return to_string(x);'
               retain: true
+              
     energy_delivered_tariff2:
       name: "Energy Consumed Tariff 2"
       id: energy_consumed_t2
       state_class: total_increasing
       device_class: energy
-      on_value:
-        then:
-          - mqtt.publish:
-              topic: ${mqtt_topic_prefix}/energy_delivered_tariff2_kWh
-              payload: !lambda 'return to_string(x);'
-              retain: true
+      filters:
+        - throttle: 10s
+        
     energy_returned_lux:
       name: "Energy Produced Luxembourg"
       id: energy_produced_lux
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_energy_exported_kWh
               payload: !lambda 'return to_string(x);'
               retain: true
+              
     energy_returned_tariff1:
       name: "Energy Produced Tariff 1"
       id: energy_produced_t1
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 10s
+        
     energy_returned_tariff2:
       name: "Energy Produced Tariff 2"
       id: energy_produced_t2
       state_class: total_increasing
       device_class: energy
+      filters:
+        - throttle: 10s
+        
     power_delivered:
       name: "Power Consumed"
       id: power_consumed
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_imported_kW
               payload: !lambda 'return to_string(x);'
+              
     power_returned:
       name: "Power Produced"
       id: power_produced
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_exported_kW
               payload: !lambda 'return to_string(x);'
+              
     electricity_failures:
       name: "Electricity Failures"
       id: electricity_failures
       icon: mdi:alert
+      
     electricity_long_failures:
       name: "Long Electricity Failures"
       id: long_failures
       icon: mdi:alert
+      
     voltage_l1:
       name: "Voltage Phase 1"
       id: voltage_l1
       device_class: voltage
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/volt_l1_V
               payload: !lambda 'return to_string(x);'
+              
     voltage_l2:
       name: "Voltage Phase 2"
       id: voltage_l2
       device_class: voltage
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/volt_l2_V
               payload: !lambda 'return to_string(x);'
+              
     voltage_l3:
       name: "Voltage Phase 3"
       id: voltage_l3
       device_class: voltage
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/volt_l3_V
               payload: !lambda 'return to_string(x);'
+              
     current_l1:
       name: "Current Phase 1"
       id: current_l1
       device_class: current
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/curr_l1_A
               payload: !lambda 'return to_string(x);'
+              
     current_l2:
       name: "Current Phase 2"
       id: current_l2
       device_class: current
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/curr_l2_A
               payload: !lambda 'return to_string(x);'
+              
     current_l3:
       name: "Current Phase 3"
       id: current_l3
       device_class: current
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/curr_l3_A
               payload: !lambda 'return to_string(x);'
+              
     power_delivered_l1:
       name: "Power Consumed Phase 1"
       id: power_consumed_l1
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_imp_p_plus_l1_kW
               payload: !lambda 'return to_string(x);'
+              
     power_delivered_l2:
       name: "Power Consumed Phase 2"
       id: power_consumed_l2
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_imp_p_plus_l2_kW
               payload: !lambda 'return to_string(x);'
+              
     power_delivered_l3:
       name: "Power Consumed Phase 3"
       id: power_consumed_l3
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_imp_p_plus_l3_kW
               payload: !lambda 'return to_string(x);'
+              
     power_returned_l1:
       name: "Power Produced Phase 1"
       id: power_produced_l1
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_exp_p_minus_l1_kW
               payload: !lambda 'return to_string(x);'
+              
     power_returned_l2:
       name: "Power Produced Phase 2"
       id: power_produced_l2
       accuracy_decimals: 3
       device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_exp_p_minus_l2_kW
               payload: !lambda 'return to_string(x);'
+              
     power_returned_l3:
       name: "Power Produced Phase 3"
       id: power_produced_l3
       accuracy_decimals: 3
-      device_class: power  
+      device_class: power
+      filters:
+        - throttle: 10s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/act_pwr_exp_p_minus_l3_kW
               payload: !lambda 'return to_string(x);'
+              
     gas_delivered:
       name: "Gas Consumed"
       id: gas_consumed
       state_class: total_increasing
       device_class: gas
+      filters:
+        - throttle: 60s
       on_value:
         then:
           - mqtt.publish:
               topic: ${mqtt_topic_prefix}/gas_index_m3
               payload: !lambda 'return to_string(x);'
               retain: true
+              
     water_delivered:
       name: "Water Consumed"
       id: water_consumed
       state_class: total_increasing
       device_class: water
       icon: mdi:water
+      filters:
+        - throttle: 60s
       on_value:
         then:
           - mqtt.publish:
@@ -362,41 +420,8 @@ sensor:
   - platform: wifi_signal
     name: "Wi-Fi Signal"
     update_interval: 60s
-    
-  # Optional BME280 Environmental sensor (uncomment if you have one)
-  # - platform: bme280_i2c
-  #   temperature:
-  #     name: "BME280 Temperature"
-  #     id: bme280_temp
-  #     oversampling: 16x
-  #     device_class: temperature
-  #     on_value:
-  #       then:
-  #         - mqtt.publish:
-  #             topic: ${mqtt_topic_prefix}/bme280_temperature_C
-  #             payload: !lambda 'return to_string(x);'
-  #   pressure:
-  #     name: "BME280 Pressure"
-  #     id: bme280_pressure
-  #     device_class: atmospheric_pressure
-  #     on_value:
-  #       then:
-  #         - mqtt.publish:
-  #             topic: ${mqtt_topic_prefix}/bme280_pressure_hPa
-  #             payload: !lambda 'return to_string(x);'
-  #   humidity:
-  #     name: "BME280 Humidity"
-  #     id: bme280_humidity
-  #     device_class: humidity
-  #     on_value:
-  #       then:
-  #         - mqtt.publish:
-  #             topic: ${mqtt_topic_prefix}/bme280_humidity_%
-  #             payload: !lambda 'return to_string(x);'
-  #   address: 0x76
-  #   update_interval: 60s
 
-  # Enhanced calculated sensors
+  # Template sensors
   - platform: template
     name: "Energy Consumed Today"
     id: energy_consumed_today
@@ -404,6 +429,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       if (id(energy_consumed_lux).has_state()) {
         double current = id(energy_consumed_lux).state * 1000.0;
@@ -420,7 +446,7 @@ sensor:
       then:
         - mqtt.publish:
             topic: ${mqtt_topic_prefix}/energy_consumption_calc_cumul_day_Wh
-            payload: !lambda 'return to_string(x * 1000);' # Convert to Wh for MQTT
+            payload: !lambda 'return to_string(x * 1000.0);'
 
   - platform: template
     name: "Energy Produced Today"
@@ -429,6 +455,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       if (id(energy_produced_lux).has_state()) {
         double current = id(energy_produced_lux).state * 1000.0;
@@ -445,9 +472,8 @@ sensor:
       then:
         - mqtt.publish:
             topic: ${mqtt_topic_prefix}/energy_production_calc_cumul_day_Wh
-            payload: !lambda 'return to_string(x * 1000);' # Convert to Wh for MQTT
+            payload: !lambda 'return to_string(x * 1000.0);'
 
-  # Daily water consumption
   - platform: template
     name: "Water Consumed Today"
     id: water_consumed_today
@@ -455,6 +481,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: water
+    update_interval: 60s
     lambda: |-
       if (id(water_consumed).has_state()) {
         double current = id(water_consumed).state;
@@ -473,7 +500,6 @@ sensor:
             topic: ${mqtt_topic_prefix}/water_consumption_calc_cumul_day_m3
             payload: !lambda 'return to_string(x);'
 
-  # Excess solar power calculations
   - platform: template
     name: "Power Excess Solar"
     id: power_excess_solar
@@ -481,6 +507,7 @@ sensor:
     accuracy_decimals: 0
     state_class: measurement
     device_class: power
+    update_interval: 10s
     lambda: |-
       if (id(power_produced).has_state() && id(power_consumed).has_state()) {
         double excess = (id(power_produced).state * 1000) - (id(power_consumed).state * 1000);
@@ -493,65 +520,6 @@ sensor:
             topic: ${mqtt_topic_prefix}/power_excess_solar_calc_W
             payload: !lambda 'return to_string(x);'
 
-  # Excess solar power per phase (DISABLED to save RAM)
-  # - platform: template
-  #   name: "Power Excess Solar L1"
-  #   id: power_excess_solar_l1
-  #   unit_of_measurement: "W"
-  #   accuracy_decimals: 0
-  #   state_class: measurement
-  #   device_class: power
-  #   lambda: |-
-  #     if (id(power_produced_l1).has_state() && id(power_consumed_l1).has_state()) {
-  #       double excess = (id(power_produced_l1).state * 1000) - (id(power_consumed_l1).state * 1000);
-  #       return excess > 0 ? excess : 0.0;
-  #     }
-  #     return {};
-  #   on_value:
-  #     then:
-  #       - mqtt.publish:
-  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l1_calc_W
-  #           payload: !lambda 'return to_string(x);'
-  #
-  # - platform: template
-  #   name: "Power Excess Solar L2"
-  #   id: power_excess_solar_l2
-  #   unit_of_measurement: "W"
-  #   accuracy_decimals: 0
-  #   state_class: measurement
-  #   device_class: power
-  #   lambda: |-
-  #     if (id(power_produced_l2).has_state() && id(power_consumed_l2).has_state()) {
-  #       double excess = (id(power_produced_l2).state * 1000) - (id(power_consumed_l2).state * 1000);
-  #       return excess > 0 ? excess : 0.0;
-  #     }
-  #     return {};
-  #   on_value:
-  #     then:
-  #       - mqtt.publish:
-  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l2_calc_W
-  #           payload: !lambda 'return to_string(x);'
-  #
-  # - platform: template
-  #   name: "Power Excess Solar L3"
-  #   id: power_excess_solar_l3
-  #   unit_of_measurement: "W"
-  #   accuracy_decimals: 0
-  #   state_class: measurement
-  #   device_class: power
-  #   lambda: |-
-  #     if (id(power_produced_l3).has_state() && id(power_consumed_l3).has_state()) {
-  #       double excess = (id(power_produced_l3).state * 1000) - (id(power_consumed_l3).state * 1000);
-  #       return excess > 0 ? excess : 0.0;
-  #     }
-  #     return {};
-  #   on_value:
-  #     then:
-  #       - mqtt.publish:
-  #           topic: ${mqtt_topic_prefix}/power_excess_solar_l3_calc_W
-  #           payload: !lambda 'return to_string(x);'
-
-  # Statistical sensors (15-minute averages)
   - platform: template
     name: "Power Consumed 15min Mean"
     id: power_consumed_15min_mean
@@ -625,7 +593,6 @@ sensor:
             topic: ${mqtt_topic_prefix}/power_consumption_calc_min_W
             payload: !lambda 'return to_string(x);'
 
-  # Power class exceed monitoring
   - platform: template
     name: "Energy Exceed 3kW Today"
     id: exceed_3kw_today
@@ -633,6 +600,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_3kw_day_kwh);
     on_value:
@@ -649,6 +617,7 @@ sensor:
     accuracy_decimals: 3
     state_class: measurement
     device_class: energy
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_7kw_day_kwh);
     on_value:
@@ -664,6 +633,7 @@ sensor:
     unit_of_measurement: "€"
     accuracy_decimals: 2
     state_class: measurement
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_3kw_day_kwh) * 0.1139;
     on_value:
@@ -678,6 +648,7 @@ sensor:
     unit_of_measurement: "€"
     accuracy_decimals: 2
     state_class: measurement
+    update_interval: 60s
     lambda: |-
       return id(exceed_class_7kw_day_kwh) * 0.1139;
     on_value:
@@ -717,7 +688,6 @@ text_sensor:
             topic: ${mqtt_topic_prefix}/ntp_datetime
             payload: !lambda 'return x;'
 
-  # Secondary meter type detection
   - platform: template
     name: "Secondary Meter Type"
     id: secondary_meter_type
@@ -737,20 +707,17 @@ text_sensor:
             topic: ${mqtt_topic_prefix}/secondary_meter_type
             payload: !lambda 'return x;'
 
-# Intervals for advanced calculations
+# Intervals
 interval:
-  # Update ring buffers and power class calculations every 10 seconds
   - interval: 10s
     then:
       lambda: |-
         if (id(power_consumed).has_state()) {
           double power = id(power_consumed).state * 1000.0;
           
-          // Update ring buffer
           int idx = id(buffer_index);
           id(power_consumption_buffer)[idx] = power;
           
-          // Power class exceed calculations
           double exceed_3kw = power > 3000 ? (power - 3000) * 10.0 / 3600.0 : 0.0;
           double exceed_7kw = power > 7000 ? (power - 7000) * 10.0 / 3600.0 : 0.0;
           double exceed_12kw = power > 12000 ? (power - 12000) * 10.0 / 3600.0 : 0.0;
@@ -759,7 +726,6 @@ interval:
           id(exceed_class_7kw_day_kwh) += exceed_7kw / 1000.0;
           id(exceed_class_12kw_day_kwh) += exceed_12kw / 1000.0;
           
-          // Update buffer index
           idx++;
           if (idx >= 90) {
             idx = 0;
@@ -768,7 +734,6 @@ interval:
           id(buffer_index) = idx;
         }
 
-  # Midnight reset and monthly calculations
   - interval: 60s
     then:
       lambda: |-
@@ -788,12 +753,10 @@ interval:
             id(water_consumption_midnight) = id(water_consumed).state;
           }
           
-          // Add to monthly totals
           id(exceed_class_3kw_month_kwh) += id(exceed_class_3kw_day_kwh);
           id(exceed_class_7kw_month_kwh) += id(exceed_class_7kw_day_kwh);
           id(exceed_class_12kw_month_kwh) += id(exceed_class_12kw_day_kwh);
           
-          // Reset daily counters
           id(exceed_class_3kw_day_kwh) = 0.0;
           id(exceed_class_7kw_day_kwh) = 0.0;
           id(exceed_class_12kw_day_kwh) = 0.0;
@@ -805,74 +768,37 @@ interval:
           id(exceed_class_12kw_month_kwh) = 0.0;
         }
 
-  # JSON payload publishing (like Arduino "PUBLISH_COOKED")
+  # Simplified JSON publishing (Fixed)
   - interval: 60s
     then:
-      - lambda: |-
-          // Publish JSON payload similar to Arduino version
-          std::string json_payload = "{";
-          auto time = id(sntp_time).now();
-          json_payload += "\"ntp_datetime\":\"" + time.strftime("%Y-%m-%d %H:%M:%S") + "\",";
-          
-          // BME280 sensor data (uncomment if you have BME280 sensor)
-          // if (id(bme280_temp).has_state()) {
-          //   json_payload += "\"bme280_temperature_C\":" + to_string(id(bme280_temp).state) + ",";
-          // }
-          // if (id(bme280_humidity).has_state()) {
-          //   json_payload += "\"bme280_humidity_%\":" + to_string(id(bme280_humidity).state) + ",";
-          // }
-          // if (id(bme280_pressure).has_state()) {
-          //   json_payload += "\"bme280_pressure_hPa\":" + to_string(id(bme280_pressure).state) + ",";
-          // }
-          if (id(energy_consumed_today).has_state()) {
-            json_payload += "\"energy_consumption_calc_cumul_day_Wh\":" + to_string(id(energy_consumed_today).state * 1000) + ",";
-          }
-          if (id(energy_produced_today).has_state()) {
-            json_payload += "\"energy_production_calc_cumul_day_Wh\":" + to_string(id(energy_produced_today).state * 1000) + ",";
-          }
-          if (id(power_excess_solar).has_state()) {
-            json_payload += "\"power_excess_solar_calc_W\":" + to_string(id(power_excess_solar).state) + ",";
-          }
-          
-          json_payload += "\"energy_exceed_class_3kW_day_kWh\":" + to_string(id(exceed_class_3kw_day_kwh)) + ",";
-          json_payload += "\"energy_exceed_class_7kW_day_kWh\":" + to_string(id(exceed_class_7kw_day_kwh)) + ",";
-          json_payload += "\"money_exceed_class_3kW_day_euro\":" + to_string(id(exceed_class_3kw_day_kwh) * 0.1139) + ",";
-          json_payload += "\"money_exceed_class_7kW_day_euro\":" + to_string(id(exceed_class_7kw_day_kwh) * 0.1139);
-          
-          json_payload += "}";
-          
-          // Remove last comma if present
-          size_t pos = json_payload.find_last_of(",}");
-          if (pos != std::string::npos && json_payload[pos] == ',') {
-            json_payload[pos] = '}';
-          }
-          
-          // Publish JSON payload
-          ESP_LOGI("mqtt", "Publishing JSON: %s", json_payload.c_str());
       - mqtt.publish:
-          topic: ${mqtt_topic_prefix}
+          topic: ${mqtt_topic_prefix}/summary
           payload: !lambda |-
-            std::string json_payload = "{";
+            char buf[512];
             auto time = id(sntp_time).now();
-            json_payload += "\"ntp_datetime\":\"" + time.strftime("%Y-%m-%d %H:%M:%S") + "\"";
             
-            // BME280 sensor data (uncomment if you have BME280 sensor)
-            // if (id(bme280_temp).has_state()) {
-            //   json_payload += ",\"bme280_temperature_C\":" + to_string(id(bme280_temp).state);
-            // }
-            if (id(exceed_class_3kw_day_kwh) > 0) {
-              json_payload += ",\"energy_exceed_class_3kW_day_kWh\":" + to_string(id(exceed_class_3kw_day_kwh));
-              json_payload += ",\"money_exceed_class_3kW_day_euro\":" + to_string(id(exceed_class_3kw_day_kwh) * 0.1139);
-            }
-            if (id(exceed_class_7kw_day_kwh) > 0) {
-              json_payload += ",\"energy_exceed_class_7kW_day_kWh\":" + to_string(id(exceed_class_7kw_day_kwh));
-              json_payload += ",\"money_exceed_class_7kW_day_euro\":" + to_string(id(exceed_class_7kw_day_kwh) * 0.1139);
-            }
+            snprintf(buf, sizeof(buf),
+              "{\"ntp_datetime\":\"%04d-%02d-%02d %02d:%02d:%02d\","
+              "\"energy_consumption_day_Wh\":%.0f,"
+              "\"energy_production_day_Wh\":%.0f,"
+              "\"power_excess_solar_W\":%.0f,"
+              "\"energy_exceed_3kW_day_kWh\":%.3f,"
+              "\"energy_exceed_7kW_day_kWh\":%.3f,"
+              "\"cost_exceed_3kW_day_euro\":%.2f,"
+              "\"cost_exceed_7kW_day_euro\":%.2f}",
+              time.year, time.month, time.day_of_month, time.hour, time.minute, time.second,
+              id(energy_consumed_today).state * 1000.0,
+              id(energy_produced_today).state * 1000.0,
+              id(power_excess_solar).state,
+              id(exceed_class_3kw_day_kwh),
+              id(exceed_class_7kw_day_kwh),
+              id(exceed_class_3kw_day_kwh) * 0.1139,
+              id(exceed_class_7kw_day_kwh) * 0.1139
+            );
             
-            json_payload += "}";
-            return json_payload;
+            return std::string(buf);
 
-# Control switches and buttons
+# Switches and buttons
 switch:
   - platform: template
     name: "Debug Mode"
@@ -909,16 +835,5 @@ button:
   - platform: restart
     name: "Restart Device"
 
-# Web server (DISABLED to save RAM)
-# web_server:
-#   port: 80
-#   # auth:
-#   #   username: !secret web_username
-#   #   password: !secret web_password
-#   include_internal: true
-
-# Optional: Status LED indication
-#status_led:
-#  pin:
-#    number: D4
-#    inverted: true
+mdns:
+  disabled: true
