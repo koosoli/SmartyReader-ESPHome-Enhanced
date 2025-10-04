@@ -9,7 +9,7 @@
 # 3. Copy the entire content of THIS file.
 # 4. Paste it at the END of your new device's configuration file.
 # 5. Configure your 'secrets.yaml' file with the necessary
-#    values (like weigu_dsmr_key).
+#    values (like dsmr_key).
 # ===================================================================
 
 
@@ -23,11 +23,11 @@ esp8266:
 # --- Core System Components ---
 api:
   encryption:
-    key: !secret weigu_api_key
+    key: !secret api_key
 
 ota:
   - platform: esphome
-    password: !secret weigu_ota_password
+    password: !secret ota_password
 
 safe_mode:
 
@@ -41,7 +41,7 @@ wifi:
   # Fallback AP for when Wi-Fi connection fails
   ap:
     ssid: "SmartyReader Fallback"
-    password: !secret weigu_ap_password
+    password: !secret ap_password
 
 # Required for the fallback AP to provide a configuration page
 captive_portal:
@@ -132,7 +132,7 @@ globals:
 
 dsmr:
   id: dsmr_instance
-  decryption_key: !secret weigu_dsmr_key
+  decryption_key: !secret dsmr_key
   max_telegram_length: 1800
   gas_mbus_id: 1
   water_mbus_id: 2
