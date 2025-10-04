@@ -1,456 +1,98 @@
-# Universal SmartyReader Enhanced ESPHome Template
+# ESPHome Templates for SmartyReader & Slimmelezer
 
-This repository contains a universal ESPHome template for smart meter readers, designed to be compatible with both the **WeiGu SmartyReader** and the **Slimmelezer** hardware. The code has been tested for both devices. For more information on the Slimmelezer, you can visit the product page [here](https://www.zuidwijk.com/product/slimmelezer/).
+This repository provides optimized, feature-rich ESPHome templates for popular P1 smart meter readers, including the **WeiGu SmartyReader** and **Slimmelezer**. These configurations are designed for seamless, stable integration with Home Assistant.
 
-The `smartyreader-enhanced.yaml` file is the primary configuration and provides a rich set of features, including detailed energy monitoring, daily and monthly statistics, and power quality metrics. It is designed for seamless integration with Home Assistant.
-
-This project also preserves the features and spirit of the original Arduino-based SmartyReader project from Guy Weiler (www.weigu.lu), bringing them to the modern ESPHome ecosystem.
+This project modernizes and ports the incredible features from the original Arduino-based SmartyReader project by **Guy Weiler (weigu.lu)** to the ESPHome ecosystem.
 
 ## 📁 Configuration Files
 
-### 1. `enhanced_weigu_smartyreader.yaml` - Full Featured Version
-**Recommended for most users**
-- Complete DSMR P1 port reading with Luxembourg smartmeter support
-- Advanced power analytics and statistics
-- 15-minute statistical calculations (mean/min/max)
-- Power class monitoring (3kW, 7kW, 12kW thresholds)
-- Daily and monthly energy exceed tracking with cost calculations
-- BME280 environmental sensor support
-- Comprehensive Home Assistant integration
-- Web interface for diagnostics
+## ✨ Key Features
 
-### 2. `enhanced_weigu_smartyreader_mqtt.yaml` - MQTT Enhanced Version
-**⚠️ REQUIRES ESP32 - Not compatible with ESP8266 due to high memory usage**
-**For users preferring MQTT or using other home automation platforms**
-- All features from the enhanced version
-- Full MQTT integration with individual topics for each sensor
-- JSON payload publishing (similar to Arduino "PUBLISH_COOKED" mode)
-- **Last Will and Testament (LWT)**: Birth/will messages for reliable connection status monitoring
-- MQTT birth message: "online" when device connects
-- MQTT will message: "offline" when device disconnects unexpectedly
-- Compatible with OpenHAB, Node-RED, and other MQTT-based systems
-- Dual integration: Home Assistant API + MQTT
-- **Hardware Requirement**: ESP32 with Arduino framework required due to:
-  - DSMR component only works with Arduino framework (not ESP-IDF)
-  - High RAM usage from MQTT client + extensive sensor publishing
-  - ESP8266 has insufficient memory (~80KB vs ESP32's ~520KB)
-- See `ESP32_MQTT_FIX_README.md` for detailed configuration instructions
+-   **Hardware-Specific:** Separate, pre-configured templates for different hardware to avoid confusion.
+-   **Advanced Analytics:** 15-minute statistics (mean/min/max), daily/monthly totals, and power class monitoring (3kW, 7kW, 12kW).
+-   **Cost Calculation:** Automatically calculates the cost of exceeding power thresholds.
+-   **Gas & Water Metering:** Full support for M-Bus gas and water meters, with automatic detection of the secondary meter type.
+-   **Robust & Stable:** Includes modern ESPHome features like Safe Mode, Fallback AP, and memory optimizations for high reliability.
+-   **MQTT Version Available:** A powerful ESP32-based template with deep MQTT integration, including LWT (Birth/Will messages) for professional monitoring.
 
-### 3. `enhanced_slimmelezer.yaml` - SlimmeLezer Standalone Version
-**Complete configuration for SlimmeLezer hardware**
-- All features from the enhanced version
-- Pre-configured for SlimmeLezer hardware (D7 RX pin, D5 request pin)
-- Standalone file - no need to merge with other configs
-- Dynamic DSMR key setting via Home Assistant service
-- Compatible with Belgian and Luxembourg smart meters
-- ESP8266 (D1 Mini) optimized
+## 📁 Available Templates
 
-### 4. `smartyreader_test_mode.yaml` - Testing & Debugging
-**For troubleshooting and development**
-- Raw P1 data inspection (hex output like Arduino test program)
-- Connection diagnostics and error counting
-- Telegram reception monitoring
-- Debug logging and status reporting
-- Minimal sensor configuration for testing
+Choose the **one** file that matches your hardware and desired communication method.
 
-### 4. `smartyreader_test_mode.yaml` - Testing & Debugging
-**For troubleshooting and development**
-- Raw P1 data inspection (hex output like Arduino test program)
-- Connection diagnostics and error counting
-- Telegram reception monitoring
-- Debug logging and status reporting
-- Minimal sensor configuration for testing
+| Filename | Hardware | Communication | Description |
+| :--- | :--- | :--- | :--- |
+| `slimmelezer-esp8266-api.yaml` | **Slimmelezer** | Home Assistant API | **Recommended for Slimmelezer users.** A complete, standalone config for the ESP8266-based Slimmelezer. |
+| `weigu-smartyreader-esp8266-api.yaml` | **WeiGu SmartyReader** | Home Assistant API | **Recommended for WeiGu users.** A complete, standalone config for the ESP8266-based SmartyReader. |
+| `smartyreader-esp32-mqtt.yaml` | **ESP32 (Universal)** | MQTT | **For advanced users or non-HA systems.** A powerful template for any ESP32 board using MQTT. |
 
-### 5. `weigu-ESPhome.txt` - Original Simple Version
-**Basic configuration for reference**
-- Your current working configuration
-- Simple DSMR reading without advanced features
 
-### 6. `secrets_template.yaml` - Configuration Template
-**Security and credentials**
-- Template for all required secrets
-- WiFi, API keys, MQTT credentials
-- Copy and customize for your setup
+## 🚀 Installation Guide for Novice Users
 
-## 🚀 New Features Added
+Follow these steps to get your reader up and running in minutes.
 
-### Advanced Analytics
-- **Statistical Calculations**: 15-minute rolling averages, min/max values for all power readings
-- **Excess Solar Tracking**: Per-phase excess solar power calculations
-- **Daily Energy Totals**: Automatic daily energy consumption and production tracking
-- **Historical Data**: Monthly accumulation with automatic midnight resets
+### Step 1: Prepare Your `secrets.yaml`
 
-### Power Class Monitoring
-- **Threshold Monitoring**: Configurable power class limits (3kW, 7kW, 12kW)
-- **Exceed Energy Tracking**: Precise measurement of energy consumption above thresholds
-- **Cost Calculations**: Automatic cost calculation for exceeding power classes (€0.1139/kWh)
-- **Time-based Reporting**: 15-minute, daily, and monthly exceed summaries
-
-### Enhanced Connectivity
-- **MQTT Integration**: Full MQTT support with individual topics and JSON payloads
-- **Last Will and Testament (LWT)**: Automatic "offline" status when device disconnects unexpectedly
-- **Birth Messages**: Automatic "online" status when device connects successfully
-- **Static IP Support**: Optional static IP configuration
-- **Discovery Protocol**: Automatic Home Assistant device discovery
-
-### Improved Diagnostics
-- **Raw Data Inspection**: Hex dump of P1 data streams for debugging
-- **Connection Monitoring**: Automatic detection of communication issues  
-- **Error Tracking**: Comprehensive error counting and reporting
-- **Status Indicators**: Real-time status updates and health monitoring
-
-### Water & Gas Metering
-- **Water Meter Support**: Includes sensors for total water consumption (`water_consumed`) and daily usage (`water_consumed_today`), fully integrated with daily and monthly statistics.
-- **Automatic Meter Detection**: A new `Secondary Meter Type` sensor automatically identifies whether the connected M-Bus meter is for "Gas" or "Water", simplifying setup.
-
-### Smart Controls
-- **Manual Reset Functions**: Reset daily/monthly statistics on demand
-- **Buffer Management**: Clear statistical buffers when needed
-- **Debug Controls**: Enable/disable debug modes dynamically
-- **Web Interface**: Built-in web server for configuration and monitoring
-
-## 📊 Sensor Overview
-
-### DSMR P1 Port Sensors
-- Energy consumption/production (total and per tariff)
-- Power consumption/production (total and per phase)
-- Voltage and current per phase
-- Gas and Water consumption
-- Secondary meter type detection (Gas/Water)
-- Electricity failures and voltage events
-
-### Calculated Sensors
-- Daily energy totals (consumption/production)
-- 15-minute power statistics (mean/min/max)
-- Excess solar power (total and per phase)
-- Power class exceed energy and costs
-- Real-time calculations and historical totals
-
-### Environmental Sensors (BME280)
-- Temperature, humidity, atmospheric pressure
-- I²C connection via expansion connector
-
-### System Sensors
-- WiFi signal strength and connection info
-- Device uptime and ESPHome version
-- Last update timestamps
-
-## ⚙️ Installation Instructions for Novice Users
-
-This guide will walk you through setting up your SmartyReader from scratch using ESPHome.
-
-### Step 1: Create a New Device in ESPHome
-
-1.  Open your **ESPHome Dashboard**.
-2.  Click the **"+ NEW DEVICE"** button.
-3.  Give your device a name (e.g., `smartyreader`).
-4.  **Important:** Select the correct device type for your hardware.
-    *   For the **WeiGu SmartyReader**, the recommended board is **"WEMOS D1 mini Pro"**.
-    *   For other boards like the **Slimmelezer**, choose **"Generic ESP8266"** or the specific board model you are using.
-5.  ESPHome will create a basic configuration file for you. Click **"EDIT"** to open it.
-
-Your new configuration file will look something like this. **Notice that ESPHome has already created unique keys for the `api` and `ota` sections.**
-
-```yaml
-esphome:
-  name: smartyreader
-  friendly_name: smartyreader
-
-esp8266:
-  board: d1_mini_pro
-
-# Enable logging
-logger:
-
-# Enable Home Assistant API
-api:
-  encryption:
-    key: "ABCDE12345........................"
-
-ota:
-  password: "YOUR_OTA_PASSWORD"
-
-wifi:
-  ssid: "YourWiFi_SSID"
-  password: "YourWiFi_Password"
-
-# ... etc.
-```
-
-**Do not change this base configuration.** It has been generated specifically for your device and its security keys.
-
-### Step 2: Add the SmartyReader Configuration Snippet
-
-1.  Decide which version you want to use:
-    *   `enhanced_weigu_smartyreader.yaml`: For direct integration with Home Assistant (recommended for most users).
-    *   `enhanced_weigu_smartyreader_mqtt.yaml`: For integration via MQTT.
-
-2.  Open the chosen file from this repository and **copy its entire content**.
-
-3.  Go back to the configuration file for your new device in the ESPHome editor.
-
-4.  **Paste the copied content at the very end of the file.**
-
-Your final file should be structured like this:
-```yaml
-# (Your original configuration from Step 1 is here)
-esphome:
-  name: smartyreader
-# ... etc ...
-wifi:
-  ssid: "YourWiFi_SSID"
-  password: "YourWiFi_Password"
-
-# ===================================================================
-# WeiGu SmartyReader Enhanced - ESPHome Configuration Snippet
-# (The content you just pasted starts here)
-# ===================================================================
-uart:
-  id: uart_bus
-# ... and the rest of the snippet ...
-```
-
-### Step 3: Configure Your Secrets
-
-Your SmartyReader needs secrets like your WiFi password and DSMR key to function.
-
-1.  In the ESPHome dashboard, find your `secrets.yaml` file. If it doesn't exist, create one.
-2.  Copy the contents of the `secrets_template.yaml` file from this repository and paste them into your `secrets.yaml`.
-3.  Update the values with your own information. At a minimum, you will need to provide:
+1.  In your ESPHome dashboard, find or create the `secrets.yaml` file.
+2.  Copy the entire content from the `secrets_template.yaml` file in this repository.
+3.  Paste it into your `secrets.yaml` and fill in your values. At a minimum, you **must** provide:
     *   `wifi_ssid` and `wifi_password`
-    *   `weigu_dsmr_key` (This is the 32-character key from your utility provider for Luxembourg meters).
+    *   `dsmr_key` (Your 32-character key from your utility provider)
+    *   `ota_password` (Create a password for wireless updates)
+    *   `fallback_ap_password` (Create a password for the recovery hotspot)
+    *   `api_key` (If using an API version. You can generate one with an online tool).
 
-**Note on Static IP:** The `secrets_template.yaml` includes a commented-out section for a static IP address. This is an **advanced feature**. Most users should leave this section commented out and allow their device to get an IP address automatically via DHCP.
+### Step 2: Create a New Device in ESPHome
 
-An example `secrets.yaml` for a typical user might look like this:
-```yaml
-# WiFi Configuration
-wifi_ssid: "MyHomeWiFi"
-wifi_password: "MySuperSecretPassword"
+1.  In the ESPHome Dashboard, click **"+ NEW DEVICE"**.
+2.  Give it a name (e.g., `slimmelezer`) and click through the wizard.
+3.  Select the correct board for your hardware:
+    *   For **Slimmelezer**: Choose **WEMOS D1 mini**.
+    *   For **WeiGu SmartyReader**: Choose **WEMOS D1 mini Pro**.
+    *   For the **MQTT Version**: Choose **Generic ESP32**.
+4.  Click **"SKIP"** when asked to create a basic configuration. A blank device file will be created.
 
-# DSMR Decryption Key (Luxembourg smartmeter)
-# Replace with your actual 32-character hex key
-weigu_dsmr_key: "AEBD21B769A6D13C0DF064E383682EFF"
+### Step 3: Copy and Paste the Template
 
-# ... other secrets as needed ...
-```
+1.  Click **"EDIT"** on your newly created device.
+2.  Open the correct YAML template file from this repository for your hardware (e.g., `slimmelezer-esp8266-api.yaml`).
+3.  **Copy the entire content** of the template.
+4.  **Paste it into the ESPHome editor**, replacing anything that was there.
+5.  *Optional:* Change the `device_name` and `friendly_name` under the `substitutions:` block at the top of the file.
 
-### Step 4: Install and Start Your Device
+### Step 4: Install
 
-1.  In the ESPHome editor, click **"SAVE"** and then **"INSTALL"**.
-2.  Choose the method to flash the firmware to your device (e.g., "Plug into this computer").
+1.  Click **"SAVE"** and then **"INSTALL"**.
+2.  Choose your preferred installation method (e.g., "Plug into this computer").
 3.  Follow the on-screen instructions.
 
-Once installed, your SmartyReader will connect to your network and should automatically appear as a new device in Home Assistant (if you are using the native API).
+Once flashed, your device will connect to your Wi-Fi and should automatically be discovered by Home Assistant!
 
-## 🔧 Hardware Requirements
+## 🔧 Configuration & Customization
 
-### Base Requirements
-- **ESP8266** (LOLIN/WEMOS D1 Mini Pro recommended) or **ESP32**
-- **P1 Port Connection** to Luxembourg smartmeter
-- **Proper signal inversion** (built into newer hardware)
+The templates are designed to work out-of-the-box, but you can customize them further.
 
-### Optional Additions
-- **BME280 Sensor**: Temperature/humidity/pressure via I²C
-- **Status LED**: Built-in LED for visual status indication  
-- **Expansion Connector**: For additional sensors or debugging
+### M-Bus Channel Configuration (Gas/Water)
 
-### Connection Diagram
-```
-Smartmeter P1 Port → SmartyReader Board → ESP8266/ESP32
-     │                        │               │
-     ├─ Pin 2 (5V Enable)     ├─ Power        ├─ WiFi Connection
-     ├─ Pin 5 (Data TX)       ├─ UART RX      ├─ Home Assistant
-     └─ Pin 6 (GND)           └─ Signal Inv.  └─ MQTT (optional)
-```
-
-## 📈 Configuration Options
-
-### Power Class Thresholds
-```yaml
-# Customize power exceed monitoring
-- lambda: |-
-    // Change these values to match your contract
-    double exceed_3kw = power > 3000 ? (power - 3000) * 10.0 / 3600.0 : 0.0;
-    double exceed_7kw = power > 7000 ? (power - 7000) * 10.0 / 3600.0 : 0.0;
-    double exceed_12kw = power > 12000 ? (power - 12000) * 10.0 / 3600.0 : 0.0;
-```
-
-### Cost Calculations
-```yaml
-# Update cost per kWh for your region
-- lambda: |-
-    return id(exceed_class_3kw_day_kwh) * 0.1139;  # €0.1139 per kWh
-```
-
-### Statistical Window
-```yaml
-# Change 15-minute window (90 samples at 10s intervals)
-globals:
-  - id: power_consumption_buffer
-    type: double[90]  # Adjust size: 90 = 15min, 180 = 30min
-
-### M-Bus Channel Configuration
-By default, the DSMR standard assigns gas meters to M-Bus channel 1 and water meters to channel 2. These configurations are now explicitly defined in the `.yaml` files:
-```yaml
-dsmr:
-  gas_mbus_id: 1
-  water_mbus_id: 2
-```
-If you have a non-standard setup, such as **only a water meter connected to channel 1**, you can easily adjust the configuration. To do this, simply set the `gas_mbus_id` to a different, unused channel (e.g., 0) and change the `water_mbus_id` to 1.
+The DSMR standard assigns gas to M-Bus channel 1 and water to channel 2. This is the default. If you have a non-standard setup (e.g., only a water meter on channel 1), you can change it in the `dsmr:` section.
 
 **Example for a water-only setup on channel 1:**
 ```yaml
 dsmr:
   gas_mbus_id: 0   # Disable gas monitoring
   water_mbus_id: 1 # Assign water meter to channel 1
-```
-```
 
-## 📡 **MQTT Last Will and Testament (LWT)**
 
-### **What is LWT?**
-Last Will and Testament is an MQTT protocol feature that ensures reliable device status monitoring:
-
-- **Birth Message**: Published as "online" when the device successfully connects to MQTT broker
-- **Will Message**: Automatically published as "offline" by the broker if the device disconnects unexpectedly
-- **Retain Flag**: Status messages are retained so new subscribers immediately know device status
-- **Topic**: Published to `{topic_prefix}/status` (e.g., `lamsmarty/status`)
-
-### **How It Works**
+### Cost Calculations
+To change the cost per kWh for exceeding power classes, edit the lambda value in the cost sensors.
 ```yaml
-# MQTT LWT Configuration (in MQTT enhanced version)
-mqtt:
-  birth_message:
-    topic: lamsmarty/status
-    payload: "online"      # Published when device connects
-    retain: true
-  will_message:
-    topic: lamsmarty/status
-    payload: "offline"     # Published by broker if device disconnects
-    retain: true
+# Update cost per kWh for your region
+- platform: template
+  name: "Cost Exceed 3kW Today"
+  # ...
+  lambda: 'return id(exceed_class_3kw_day_kwh) * 0.1139;' # Change 0.1139 to your rate
 ```
 
-### **Why Important for ESP Devices?**
-ESP devices can disconnect due to:
-- Power outages or brownouts
-- WiFi connectivity issues
-- Device crashes or freezes
-- Physical disconnection
 
-LWT ensures your home automation system knows the device status even when the device can't send a manual "goodbye" message.
-
-### **Monitoring in Home Assistant**
-```yaml
-# Create a binary sensor to monitor device status
-binary_sensor:
-  - platform: mqtt
-    name: "SmartyReader Status"
-    state_topic: "lamsmarty/status"
-    payload_on: "online"
-    payload_off: "offline"
-    device_class: connectivity
-```
-
-## 🏠 Home Assistant Integration
-
-### Automatic Discovery
-All sensors automatically appear in Home Assistant with proper device classes:
-- **Energy**: kWh sensors with `total_increasing` state class
-- **Power**: W sensors with `measurement` state class  
-- **Voltage/Current**: V/A sensors with appropriate device classes
-- **Environmental**: Temperature, humidity, pressure sensors
-
-### Custom Dashboards
-Create energy dashboards using the enhanced sensors:
-```yaml
-# Energy dashboard card example
-type: energy-date-selection
-title: Energy Usage
-entities:
-  - sensor.energy_consumed_today
-  - sensor.energy_produced_today
-  - sensor.cost_exceed_3kw_today
-```
-
-### Automations
-Use power exceed sensors for smart home automation:
-```yaml
-# Example automation for high power usage
-automation:
-  - alias: "High Power Alert"
-    trigger:
-      - platform: numeric_state
-        entity_id: sensor.power_consumed
-        above: 7000
-    action:
-      - service: notify.mobile_app
-        data:
-          message: "Power usage exceeds 7kW!"
-```
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **No DSMR Data Received / Entities are "Unknown"**
-   - **Activate P1 Port**: The most common cause is that the **P1 port on your smart meter is not activated**. You must contact your utility provider (e.g., Fluvius in Belgium) and ask them to enable it.
-   - **External Power**: For smart meters with older DSMR versions (before 5.0), the P1 port may not provide enough power. You may need to power the device with an external 5V micro-USB power supply. This can also solve general instability and rebooting issues.
-   - **Check Connections**: Check P1 cable connections.
-   - **Verify DSMR Key**: If applicable (e.g., in Luxembourg), verify your DSMR decryption key.
-   - **Use Test Mode**: Use the `smartyreader_test_mode.yaml` configuration for debugging raw data.
-
-2. **Incorrect Configuration for Slimmelezer**
-   - If you are using a Slimmelezer, ensure you have commented out the `esphome`/`esp8266` block for the WeiGu and uncommented the one for the Slimmelezer.
-   - Crucially, you must also comment out the `uart`/`dsmr` block for the WeiGu and uncomment the corresponding block for the Slimmelezer, which configures the correct pins (`D7` and `D5`).
-
-3. **Incorrect Power Values**
-   - Verify signal inversion in the `uart` configuration.
-   - Check for interference on UART lines.
-   - Review raw data using test mode.
-
-4. **Statistical Calculations Not Working**
-   - Ensure sufficient uptime for the 15-minute buffer to fill.
-   - Check global variable initialization.
-   - Verify interval timers are running correctly.
-
-5. **Status LED Not Working / Random Flickering**
-   - **CRITICAL**: Cannot use both `hardware_uart: UART1` and `status_led` on the same pin.
-   - **Solution**: Comment out `hardware_uart: UART1` in the logger section if you are using the status LED.
-   - **Pin Conflict**: D4 (GPIO2) is used by both UART1 TX and the built-in LED on many boards.
-   - **Result**: Logger will work via WiFi, and the status LED will function properly.
-
-### Debug Mode
-Enable comprehensive logging:
-```yaml
-logger:
-  level: VERBOSE
-  logs:
-    dsmr: VERBOSE
-    sensor: DEBUG
-```
-
-### Test Mode Features
-- Raw P1 data inspection (hex dump)
-- Telegram reception counting
-- Connection status monitoring
-- Error detection and logging
-
-## 📚 Comparison with Arduino Version
-
-| Feature | Arduino Original | ESPHome Enhanced | Notes |
-|---------|-----------------|------------------|-------|
-| DSMR Reading | ✅ Full | ✅ Full | Complete parity |
-| Power Statistics | ✅ Ring Buffers | ✅ Simplified | ESPHome limitations |
-| Power Class Monitor | ✅ Full | ✅ Full | Complete implementation |
-| MQTT Publishing | ✅ Individual + JSON | ✅ Individual + JSON | Feature parity |
-| **MQTT LWT (Birth/Will)** | ✅ Full | ✅ Full | Complete parity |
-| Home Assistant | ❌ Manual | ✅ Native | ESPHome advantage |
-| OTA Updates | ✅ Arduino OTA | ✅ ESPHome OTA | Both supported |
-| Web Interface | ❌ None | ✅ Built-in | ESPHome advantage |
-| BME280 Support | ✅ Manual | ✅ Native | ESPHome advantage |
-| Raw Data Debug | ✅ Full | ✅ Limited | Arduino more detailed |
-| Ethernet Support | ✅ W5100/W5500 | ❌ Not supported | Arduino advantage |
 
 ## 🙏 **Credits & Acknowledgments**
 
