@@ -34,10 +34,12 @@ esp32:
 
 # --- Core System Components ---
 logger:
+  level: INFO
 
 ota:
   password: !secret ota_password
-  safe_mode: true
+
+safe_mode:
 
 wifi:
   ssid: !secret wifi_ssid
