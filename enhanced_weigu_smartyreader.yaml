@@ -26,8 +26,10 @@ api:
     key: !secret weigu_api_key
 
 ota:
-  password: !secret ota_password
-  safe_mode: true
+  - platform: esphome
+    password: !secret weigu_ota_password
+
+safe_mode:
 
 logger:
   # CRITICAL: This line is essential for freeing up GPIO3 for the UART.
@@ -39,7 +41,7 @@ wifi:
   # Fallback AP for when Wi-Fi connection fails
   ap:
     ssid: "SmartyReader Fallback"
-    password: !secret fallback_ap_password
+    password: !secret weigu_ap_password
 
 # Required for the fallback AP to provide a configuration page
 captive_portal:
