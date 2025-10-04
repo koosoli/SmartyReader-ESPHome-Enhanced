@@ -14,7 +14,7 @@
 #   - wifi_ssid, wifi_password
 #   - ota_password, fallback_ap_password
 #   - mqtt_broker, mqtt_port, mqtt_username, mqtt_password
-#   - weigu_dsmr_key
+#   - dsmr_key
 # ===================================================================
 
 substitutions:
@@ -164,7 +164,7 @@ globals:
 
 dsmr:
   id: dsmr_instance
-  decryption_key: !secret weigu_dsmr_key
+  decryption_key: !secret dsmr_key
   max_telegram_length: 1800
   gas_mbus_id: 1
   water_mbus_id: 2
