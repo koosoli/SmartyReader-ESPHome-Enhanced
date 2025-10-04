@@ -293,26 +293,28 @@ sensor:
       icon: mdi:water
       filters:
         - throttle: 60s
+        
+# Only use if you have a BME280 on the ESP
 
-  - platform: bme280_i2c
-    temperature:
-      name: "BME280 Temperature"
-      id: bme280_temp
-      oversampling: 16x
-      device_class: temperature
-      state_class: measurement
-    pressure:
-      name: "BME280 Pressure"
-      id: bme280_pressure
-      device_class: atmospheric_pressure
-      state_class: measurement
-    humidity:
-      name: "BME280 Humidity"
-      id: bme280_humidity
-      device_class: humidity
-      state_class: measurement
-    address: 0x76
-    update_interval: 60s
+#  - platform: bme280_i2c
+#    temperature:
+#      name: "BME280 Temperature"
+#      id: bme280_temp
+#      oversampling: 16x
+#      device_class: temperature
+#      state_class: measurement
+#    pressure:
+#      name: "BME280 Pressure"
+#      id: bme280_pressure
+#      device_class: atmospheric_pressure
+#      state_class: measurement
+#    humidity:
+#      name: "BME280 Humidity"
+#      id: bme280_humidity
+#      device_class: humidity
+#      state_class: measurement
+#    address: 0x76
+#    update_interval: 60s
 
   - platform: uptime
     name: "Uptime"
