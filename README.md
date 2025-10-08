@@ -103,7 +103,6 @@ This project is built upon the **outstanding work** of **Guy WEILER** ([www.weig
 - ✨ **Advanced power analytics** including ring buffer statistical calculations  
 - ✨ **Power class monitoring** with exceed energy tracking and cost calculations
 - ✨ **Comprehensive MQTT integration** with individual topics and JSON payloads
-- ✨ **BME280 environmental sensor** integration
 - ✨ **Extensive debugging tools** and test programs
 - ✨ **Detailed documentation** and hardware specifications
 
