@@ -120,14 +120,7 @@ A special thank you also goes to:
 - **Project**: SmartyReader - Arduino-based Luxembourg smartmeter interface
 - **Hardware**: Complete P1 port interface boards and documentation
 
-### **ESPHome Enhancement**
-This ESPHome version modernizes Guy's excellent work by:
-- Adapting Arduino C++ code to ESPHome YAML configuration  
-- Adding native Home Assistant integration with automatic discovery
-- Providing simplified installation and maintenance
-- Maintaining full feature compatibility with the original
 
-**Thank you Guy for your amazing contribution to the Luxembourg IoT community!** 🚀
 
 ## 🤝 Contributing
 
